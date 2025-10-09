@@ -1,0 +1,120 @@
+@page "/login"
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Đăng nhập - UniBlog</PageTitle>
+
+<div class="auth-container">
+    <div class="auth-card card">
+        <h1>Đăng nhập</h1>
+        <p class="auth-subtitle">Chào mừng bạn quay trở lại!</p>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-danger">@errorMessage</div>
+        }
+
+        <EditForm Model="loginRequest" OnValidSubmit="HandleLogin">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="alert alert-danger" />
+
+            <div class="form-group">
+                <label class="form-label">Username</label>
+                <InputText @bind-Value="loginRequest.Username" class="form-control" />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <InputText type="password" @bind-Value="loginRequest.Password" class="form-control" />
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-full" disabled="@loading">
+                @if (loading)
+                {
+                    <span>Đang đăng nhập...</span>
+                }
+                else
+                {
+                    <span>Đăng nhập</span>
+                }
+            </button>
+        </EditForm>
+
+        <div class="auth-footer">
+            <p>Chưa có tài khoản? <a href="/register">Đăng ký ngay</a></p>
+        </div>
+    </div>
+</div>
+
+@code {
+    private LoginRequest loginRequest = new();
+    private string errorMessage = string.Empty;
+    private bool loading = false;
+
+    private async Task HandleLogin()
+    {
+        loading = true;
+        errorMessage = string.Empty;
+
+        var success = await AuthService.LoginAsync(loginRequest);
+
+        if (success)
+        {
+            Navigation.NavigateTo("/");
+        }
+        else
+        {
+            errorMessage = "Username hoặc password không đúng";
+        }
+
+        loading = false;
+    }
+}
+
+<style>
+    .auth-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 70vh;
+    }
+
+    .auth-card {
+        max-width: 400px;
+        width: 100%;
+    }
+
+    .auth-card h1 {
+        text-align: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .auth-subtitle {
+        text-align: center;
+        color: var(--text-secondary);
+        margin-bottom: 2rem;
+    }
+
+    .btn-full {
+        width: 100%;
+        margin-top: 1rem;
+    }
+
+    .auth-footer {
+        text-align: center;
+        margin-top: 1.5rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .auth-footer a {
+        color: var(--primary-color);
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .auth-footer a:hover {
+        text-decoration: underline;
+    }
+</style>
+

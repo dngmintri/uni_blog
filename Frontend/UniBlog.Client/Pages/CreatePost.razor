@@ -1,0 +1,118 @@
+@page "/posts/create"
+@inject IPostService PostService
+@inject NavigationManager Navigation
+@attribute [Authorize]
+
+<PageTitle>Tạo bài viết mới - UniBlog</PageTitle>
+
+<div class="create-post-container">
+    <h1>✍️ Tạo bài viết mới</h1>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+    }
+
+    <div class="card">
+        <EditForm Model="createPostDto" OnValidSubmit="HandleCreatePost">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="alert alert-danger" />
+
+            <div class="form-group">
+                <label class="form-label">Tiêu đề *</label>
+                <InputText @bind-Value="createPostDto.Title" class="form-control" 
+                    placeholder="Nhập tiêu đề bài viết..." />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">URL hình ảnh</label>
+                <InputText @bind-Value="createPostDto.ImageUrl" class="form-control" 
+                    placeholder="https://example.com/image.jpg" />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Nội dung *</label>
+                <InputTextArea @bind-Value="createPostDto.Content" class="form-control" 
+                    rows="15" placeholder="Viết nội dung bài viết của bạn..." />
+            </div>
+
+            <div class="form-group">
+                <label class="form-check-label">
+                    <InputCheckbox @bind-Value="createPostDto.IsPublished" />
+                    Xuất bản ngay
+                </label>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary" disabled="@loading">
+                    @if (loading)
+                    {
+                        <span>Đang tạo...</span>
+                    }
+                    else
+                    {
+                        <span>Tạo bài viết</span>
+                    }
+                </button>
+                <button type="button" class="btn btn-secondary" @onclick="Cancel">
+                    Hủy
+                </button>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private CreatePostDto createPostDto = new() { IsPublished = true };
+    private string errorMessage = string.Empty;
+    private bool loading = false;
+
+    private async Task HandleCreatePost()
+    {
+        loading = true;
+        errorMessage = string.Empty;
+
+        var result = await PostService.CreatePostAsync(createPostDto);
+
+        if (result != null)
+        {
+            Navigation.NavigateTo($"/posts/{result.PostId}");
+        }
+        else
+        {
+            errorMessage = "Không thể tạo bài viết. Vui lòng thử lại.";
+        }
+
+        loading = false;
+    }
+
+    private void Cancel()
+    {
+        Navigation.NavigateTo("/");
+    }
+}
+
+<style>
+    .create-post-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .create-post-container h1 {
+        margin-bottom: 2rem;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+
+    .form-check-label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+    }
+</style>
+

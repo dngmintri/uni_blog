@@ -1,0 +1,39 @@
+@inject NavigationManager Navigation
+@inject IAuthService AuthService
+
+<nav class="navbar">
+    <div class="container navbar-content">
+        <NavLink class="navbar-brand" href="/">
+            📝 UniBlog
+        </NavLink>
+
+        <ul class="navbar-menu">
+            <AuthorizeView>
+                <Authorized>
+                    <li><NavLink class="nav-link" href="/">Trang chủ</NavLink></li>
+                    <li><NavLink class="nav-link" href="/posts/create">Tạo bài viết</NavLink></li>
+                    <li><NavLink class="nav-link" href="/profile">Hồ sơ</NavLink></li>
+                    <li>
+                        <button class="btn btn-secondary" @onclick="Logout">
+                            Đăng xuất
+                        </button>
+                    </li>
+                </Authorized>
+                <NotAuthorized>
+                    <li><NavLink class="nav-link" href="/">Trang chủ</NavLink></li>
+                    <li><NavLink class="btn btn-secondary" href="/login">Đăng nhập</NavLink></li>
+                    <li><NavLink class="btn btn-primary" href="/register">Đăng ký</NavLink></li>
+                </NotAuthorized>
+            </AuthorizeView>
+        </ul>
+    </div>
+</nav>
+
+@code {
+    private async Task Logout()
+    {
+        await AuthService.LogoutAsync();
+        Navigation.NavigateTo("/");
+    }
+}
+

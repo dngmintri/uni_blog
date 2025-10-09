@@ -1,0 +1,107 @@
+@page "/"
+@inject IPostService PostService
+@inject NavigationManager Navigation
+
+<PageTitle>UniBlog - Trang chủ</PageTitle>
+
+<div class="home-header">
+    <h1>📝 Chào mừng đến với UniBlog</h1>
+    <p>Nền tảng blog dành cho sinh viên - Chia sẻ kiến thức, kết nối cộng đồng</p>
+</div>
+
+@if (loading)
+{
+    <div class="loading-container">
+        <div class="spinner"></div>
+        <p>Đang tải bài viết...</p>
+    </div>
+}
+else if (posts == null || !posts.Any())
+{
+    <div class="alert alert-info">
+        <p>Chưa có bài viết nào. Hãy là người đầu tiên tạo bài viết!</p>
+    </div>
+}
+else
+{
+    <div class="post-list">
+        @foreach (var post in posts)
+        {
+            <div class="card post-card" @onclick="() => ViewPost(post.PostId)">
+                @if (!string.IsNullOrEmpty(post.ImageUrl))
+                {
+                    <img src="@post.ImageUrl" alt="@post.Title" class="post-image" />
+                }
+                
+                <div class="card-header">
+                    <h2 class="card-title">@post.Title</h2>
+                    <div class="card-meta">
+                        <span>👤 @(post.AuthorName ?? "Anonymous")</span>
+                        <span>📅 @post.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                    </div>
+                </div>
+
+                <p>@GetExcerpt(post.Content)</p>
+
+                <div class="post-stats">
+                    <span>👁️ @post.Views lượt xem</span>
+                    <span>💬 @post.CommentCount bình luận</span>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private List<PostDto>? posts;
+    private bool loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPosts();
+    }
+
+    private async Task LoadPosts()
+    {
+        loading = true;
+        posts = await PostService.GetPostsAsync(publishedOnly: true);
+        loading = false;
+    }
+
+    private void ViewPost(int postId)
+    {
+        Navigation.NavigateTo($"/posts/{postId}");
+    }
+
+    private string GetExcerpt(string content)
+    {
+        if (string.IsNullOrEmpty(content))
+            return string.Empty;
+
+        return content.Length > 200 
+            ? content.Substring(0, 200) + "..." 
+            : content;
+    }
+}
+
+<style>
+    .home-header {
+        text-align: center;
+        margin-bottom: 3rem;
+        padding: 2rem 0;
+    }
+
+    .home-header h1 {
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .home-header p {
+        color: var(--text-secondary);
+        font-size: 1.125rem;
+    }
+</style>
+

@@ -1,0 +1,140 @@
+@page "/profile"
+@inject IAuthService AuthService
+@inject IPostService PostService
+@inject NavigationManager Navigation
+@attribute [Authorize]
+
+<PageTitle>Hồ sơ của tôi - UniBlog</PageTitle>
+
+<div class="profile-container">
+    <h1>👤 Hồ sơ của tôi</h1>
+
+    @if (loading)
+    {
+        <div class="loading-container">
+            <div class="spinner"></div>
+            <p>Đang tải...</p>
+        </div>
+    }
+    else if (currentUser != null)
+    {
+        <div class="card">
+            <h2>Thông tin cá nhân</h2>
+            <div class="user-info">
+                <p><strong>Username:</strong> @currentUser.Username</p>
+                <p><strong>Email:</strong> @(currentUser.Email ?? "Chưa cập nhật")</p>
+                <p><strong>Họ tên:</strong> @(currentUser.FullName ?? "Chưa cập nhật")</p>
+                <p><strong>Giới tính:</strong> @(currentUser.Gender ?? "Chưa cập nhật")</p>
+                <p><strong>Vai trò:</strong> @currentUser.Role</p>
+                <p><strong>Ngày tham gia:</strong> @currentUser.CreatedAt.ToString("dd/MM/yyyy")</p>
+                @if (currentUser.LastLogin.HasValue)
+                {
+                    <p><strong>Đăng nhập lần cuối:</strong> @currentUser.LastLogin.Value.ToString("dd/MM/yyyy HH:mm")</p>
+                }
+            </div>
+        </div>
+
+        <div class="my-posts-section">
+            <h2>📝 Bài viết của tôi (@myPosts.Count)</h2>
+            
+            @if (myPosts.Any())
+            {
+                <div class="post-list">
+                    @foreach (var post in myPosts)
+                    {
+                        <div class="card post-card" @onclick="() => ViewPost(post.PostId)">
+                            <div class="card-header">
+                                <h3 class="card-title">@post.Title</h3>
+                                <div class="card-meta">
+                                    <span>📅 @post.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                                    <span>👁️ @post.Views</span>
+                                    <span>💬 @post.CommentCount</span>
+                                </div>
+                            </div>
+                            @if (!post.IsPublished)
+                            {
+                                <span class="badge badge-warning">Bản nháp</span>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    Bạn chưa có bài viết nào.
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private UserDto? currentUser;
+    private List<PostDto> myPosts = new();
+    private bool loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUserProfile();
+    }
+
+    private async Task LoadUserProfile()
+    {
+        loading = true;
+        currentUser = await AuthService.GetCurrentUserAsync();
+        
+        if (currentUser != null)
+        {
+            myPosts = await PostService.GetPostsByUserIdAsync(currentUser.UserId);
+        }
+        
+        loading = false;
+    }
+
+    private void ViewPost(int postId)
+    {
+        Navigation.NavigateTo($"/posts/{postId}");
+    }
+}
+
+<style>
+    .profile-container {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .profile-container h1 {
+        margin-bottom: 2rem;
+    }
+
+    .user-info p {
+        padding: 0.5rem 0;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .user-info p:last-child {
+        border-bottom: none;
+    }
+
+    .my-posts-section {
+        margin-top: 2rem;
+    }
+
+    .my-posts-section h2 {
+        margin-bottom: 1.5rem;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 0.25rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+    }
+
+    .badge-warning {
+        background: var(--warning-color);
+        color: white;
+    }
+</style>
