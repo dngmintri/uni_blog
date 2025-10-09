@@ -1,3 +1,6 @@
+CREATE DATABASE IF NOT EXISTS `uni_blog` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE `uni_blog`;
+
 -- phpMyAdmin SQL Dump
 -- version 5.2.2
 -- https://www.phpmyadmin.net/

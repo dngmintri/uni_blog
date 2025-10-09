@@ -9,3 +9,4 @@ public interface ILogService
     Task<IEnumerable<Log>> GetLogsByUserIdAsync(int userId);
 }
 
+

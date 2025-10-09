@@ -8,3 +8,4 @@ public interface IAuthService
     Task<bool> RegisterAsync(RegisterRequestDto request);
 }
 
+

@@ -9,3 +9,4 @@ public interface ILogRepository
     Task<Log> CreateAsync(Log log);
 }
 
+

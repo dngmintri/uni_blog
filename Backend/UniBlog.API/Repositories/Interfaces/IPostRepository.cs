@@ -14,3 +14,4 @@ public interface IPostRepository
     Task IncrementViewsAsync(int id);
 }
 
+

@@ -239,3 +239,4 @@ if (builder.Environment.IsDevelopment())
 - ✅ SỬ DỤNG password manager cho team (1Password, LastPass)
 - ✅ ROTATE secrets định kỳ (mỗi 90 ngày)
 
+

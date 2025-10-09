@@ -17,3 +17,4 @@ public class CreatePostDto
     public bool IsPublished { get; set; } = true;
 }
 
+

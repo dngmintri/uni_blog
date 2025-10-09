@@ -13,3 +13,4 @@ public interface IPostService
     Task<bool> DeletePostAsync(int id, int userId, bool isAdmin);
 }
 
+
