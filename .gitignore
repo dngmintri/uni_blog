@@ -1,0 +1,88 @@
+# =========================
+# .NET & Visual Studio
+# =========================
+
+## Build results
+bin/
+obj/
+out/
+Debug/
+Release/
+
+## User-specific files
+*.user
+*.userosscache
+*.suo
+*.userprefs
+*.csproj.user
+
+## Visual Studio files
+.vs/
+.vscode/
+
+## Rider / JetBrains
+.idea/
+*.sln.iml
+
+# =========================
+# Blazor & Web Stuff
+# =========================
+
+# Node dependencies (for Blazor WebAssembly or frontend libs)
+node_modules/
+wwwroot/dist/
+wwwroot/build/
+wwwroot/lib/
+
+# Environment & config secrets
+.env
+appsettings.Development.json
+appsettings.Local.json
+secrets.json
+
+# =========================
+# Logs & temp
+# =========================
+*.log
+*.tmp
+*.temp
+*.bak
+
+# =========================
+# OS generated files
+# =========================
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Icon?
+desktop.ini
+
+# =========================
+# Publish output
+# =========================
+publish/
+*.publish.xml
+
+# =========================
+# NuGet
+# =========================
+*.nupkg
+*.snupkg
+packages/
+.nuget/
+*.lock.json
+
+# =========================
+# Others (optional)
+# =========================
+# SQLite local databases
+*.db
+*.sqlite
+
+# Backup files
+*.bak
+*.old
+
+# ReSharper / Code analyzers
+_ReSharper*/
+*.DotSettings.user
