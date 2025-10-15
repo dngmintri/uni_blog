@@ -4,6 +4,10 @@ using Backend.DTOs.Posts;
 using Backend.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+
 
 namespace Backend.Controllers;
 
@@ -13,6 +17,13 @@ public class PostsController : ControllerBase
 {
     private readonly BlogDbContext _db;
     public PostsController(BlogDbContext db) => _db = db;
+
+    private int GetUserId()
+    {
+        var sub = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+            ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        return int.Parse(sub!);
+    }
 
     [HttpGet]
     public async Task<ActionResult<PagedResult<PostDto>>> Get([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] bool? published = null)
@@ -82,13 +93,16 @@ public class PostsController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize]
     public async Task<ActionResult<PostDto>> Create([FromBody] CreatePostRequest req)
     {
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
 
+        var userId = GetUserId();
+
         var entity = new Post
         {
-            UserId = req.UserId,
+            UserId = userId,
             Title = req.Title,
             Content = req.Content,
             ImageUrl = req.ImageUrl,
@@ -122,12 +136,17 @@ public class PostsController : ControllerBase
     }
 
     [HttpPut("{id:int:min(1)}")]
+    [Authorize]
     public async Task<IActionResult> Update(int id, [FromBody] UpdatePostRequest req)
     {
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
 
         var entity = await _db.Posts.FirstOrDefaultAsync(p => p.PostId == id);
         if (entity is null) return NotFound();
+
+        var userId = GetUserId();
+        var isAdmin = User.IsInRole("Admin");
+        if (!isAdmin && entity.UserId != userId) return Forbid();
 
         entity.Title = req.Title;
         entity.Content = req.Content;
@@ -140,10 +159,16 @@ public class PostsController : ControllerBase
     }
 
     [HttpDelete("{id:int:min(1)}")]
+    [Authorize]
     public async Task<IActionResult> Delete(int id)
     {
         var entity = await _db.Posts.FirstOrDefaultAsync(p => p.PostId == id);
         if (entity is null) return NotFound();
+
+        var userId = GetUserId();
+        var isAdmin = User.IsInRole("Admin");
+        if (!isAdmin && entity.UserId != userId) return Forbid();
+
 
         entity.IsDeleted = true;
         await _db.SaveChangesAsync();
