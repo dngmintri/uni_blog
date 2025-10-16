@@ -1,0 +1,57 @@
+# Phased Plan to Cover Chapters 4–11
+
+### Phase 1 — API foundation (Ch4, Ch7 basic, Ch8, Ch9)
+
+- Keep Minimal Hosting in `backend/Program.cs` with Controllers, Swagger, CORS, DbContext.
+- CRUD Posts/Comments using DTOs, attribute routing with constraints.
+- EF Core migrations synced; seed data available.
+
+### Phase 2 — Authentication & Authorization (Ch10)
+
+- Add Register/Login with BCrypt and JWT in `AuthController` + `JwtTokenService`.
+- Protect write endpoints with `[Authorize]` and role checks (owner/Admin) in `PostsController`/`CommentsController`.
+- Swagger “Authorize” button wired to Bearer scheme.
+
+### Phase 3 — Middleware & Logging (Ch6, Ch11)
+
+- Add `ExceptionHandlingMiddleware` returning consistent JSON error shape.
+- Integrate Serilog (console sink) via `builder.Host.UseSerilog()`.
+- Add simple request logging/correlation id.
+
+### Phase 4 — Caching (Ch11)
+
+- `IMemoryCache` for GET posts (keyed by page/pageSize/filter); invalidate on create/update/delete.
+- Expose a `noCache` query flag for demo.
+
+### Phase 5 — Advanced Routing & Validation (Ch7 advanced, Ch5)
+
+- Extra endpoints demonstrating optional params and route constraints.
+- Strengthen DTO validation (StringLength, Regex for ImageUrl), custom validation error mapping.
+
+### Phase 6 — Blazor WASM Frontend (Ch4, Ch5, Ch6, Ch9, Ch10)
+
+- Configure `HttpClient` base URL; optional MudBlazor.
+- `AuthenticationStateProvider` for JWT; store token in `localStorage`.
+- Pages: Login, Register, Home (paging/filter), PostDetail (+ comments), MyPosts (CRUD & guard).
+- Use `EditForm` + DataAnnotations + validation summary. Use `AuthorizeView`/route guards.
+
+### Phase 7 — Swagger/OpenAPI polish & README (Ch9, Ch11)
+
+- Add operation summaries, response types; example requests.
+- Update README with run, migrate, seed, and Swagger usage.
+
+### Phase 8 — Deployment-readiness
+
+- Config split: Development vs Production (JWT key from env), CORS origins.
+- Optional Dockerfile notes (if time permits).
+
+### Notes on Chapter Mapping
+
+- Ch4: Architecture (Controllers/Models/Program.cs), DI, request pipeline.
+- Ch5: Forms/Validation shown in Blazor `EditForm` + DataAnnotations.
+- Ch6: Middleware pipeline, JWT state on client.
+- Ch7: Attribute routing, constraints, optional params.
+- Ch8: EF Core, migrations, CRUD.
+- Ch9: REST API + Swagger, FE HttpClient.
+- Ch10: Authentication/Authorization with JWT and roles.
+- Ch11: Caching, logging, polish.

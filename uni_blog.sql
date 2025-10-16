@@ -1,3 +1,5 @@
+
+
 -- ==========================
 -- Table: users
 -- ==========================
@@ -8,8 +10,9 @@ CREATE TABLE `users` (
   `email` VARCHAR(100) COLLATE utf8mb4_unicode_ci NOT NULL UNIQUE,
   `full_name` VARCHAR(100) COLLATE utf8mb4_unicode_ci NOT NULL,
   `date_of_birth` DATE DEFAULT NULL,
-  `gender` VARCHAR(10) COLLATE utf8mb4_unicode_ci DEFAULT NULL, -- Nam/Nu/Khac, flexible
+  `gender` VARCHAR(10) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `role` ENUM('User','Admin') COLLATE utf8mb4_unicode_ci DEFAULT 'User',
+  `is_active` TINYINT(1) DEFAULT 1,
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
   `last_login` DATETIME DEFAULT NULL,
   PRIMARY KEY (`user_id`)
@@ -51,3 +54,4 @@ CREATE TABLE `comments` (
   CONSTRAINT `comments_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+COMMIT;

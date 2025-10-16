@@ -2,7 +2,9 @@ using Backend.Data;
 using Backend.DTOs.Comments;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Backend.DTOs.Comments;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace Backend.Controllers;
 
@@ -12,6 +14,13 @@ public class CommentsController : ControllerBase
 {
     private readonly BlogDbContext _db;
     public CommentsController(BlogDbContext db) => _db = db;
+
+    private int GetUserId()
+    {
+        var sub = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+            ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        return int.Parse(sub!);
+    }
 
     [HttpGet]
     public async Task<ActionResult<IEnumerable<CommentDto>>> Get(int postId)
@@ -37,16 +46,19 @@ public class CommentsController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize]
     public async Task<ActionResult<CommentDto>> Create(int postId, [FromBody] CreateCommentRequest req)
     {
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
         var exists = await _db.Posts.AnyAsync(p => p.PostId == postId);
         if (!exists) return NotFound();
 
+        var userId = GetUserId();
+
         var entity = new Backend.Models.Comment
         {
             PostId = postId,
-            UserId = req.UserId,
+            UserId = userId,
             Content = req.Content,
             CreatedAt = DateTime.Now,
             IsDeleted = false
