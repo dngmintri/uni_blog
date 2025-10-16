@@ -15,6 +15,6 @@ public class Comment
     public DateTime CreatedAt { get; set; } = DateTime.Now;
     public bool IsDeleted { get; set; } = false;
 
-    [JsonIgnore] public Post? Post { get; set; }  // <- nullable + ignore
-    [JsonIgnore] public User? User { get; set; }  // <- nullable + ignore
+    public Post? Post { get; set; }
+    public User? User { get; set; } 
 }
