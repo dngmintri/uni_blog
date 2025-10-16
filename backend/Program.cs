@@ -3,12 +3,16 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-
-
+using Backend.Repositories;
+using Backend.Repositories.Interfaces;
+using Backend.Services;
+using Backend.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Kết nối database MySQL
+//==================================================
+// KẾT NỐI DATABASE (MySQL)
+//==================================================
 var connectDB = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<BlogDbContext>(options =>
     options.UseMySql(
@@ -16,11 +20,31 @@ builder.Services.AddDbContext<BlogDbContext>(options =>
         ServerVersion.AutoDetect(connectDB)
     ));
 
-// Services
+//==================================================
+// CẤU HÌNH DỊCH VỤ CƠ BẢN
+//==================================================
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
-// Swagger
+//==================================================
+// ĐĂNG KÝ DEPENDENCY INJECTION (Repositories & Services)
+//==================================================
+// Repository
+builder.Services.AddScoped<IPostRepository, PostRepository>();
+builder.Services.AddScoped<ICommentRepository, CommentRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+
+// Service
+builder.Services.AddScoped<IPostService, PostService>();
+builder.Services.AddScoped<ICommentService, CommentService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+
+// JWT Token Service
+builder.Services.AddSingleton<JwtTokenService>();
+
+//==================================================
+// CẤU HÌNH SWAGGER (API Documentation)
+//==================================================
 builder.Services.AddSwaggerGen(o =>
 {
     o.SwaggerDoc("v1", new() { Title = "UniBlog API", Version = "v1" });
@@ -42,13 +66,20 @@ builder.Services.AddSwaggerGen(o =>
     });
 });
 
-// Cors
+//==================================================
+// CẤU HÌNH CORS (Cho phép frontend gọi API)
+//==================================================
 builder.Services.AddCors(o => o.AddPolicy("Wasm", p => p
     .WithOrigins("https://localhost:7172", "http://localhost:5173")
-    .AllowAnyHeader().AllowAnyMethod()));
+    .AllowAnyHeader()
+    .AllowAnyMethod()));
 
+//==================================================
+// CẤU HÌNH JWT AUTHENTICATION
+//==================================================
 var jwtSection = builder.Configuration.GetSection("Jwt");
 var key = Encoding.UTF8.GetBytes(jwtSection["Key"]!);
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(o =>
     {
@@ -61,38 +92,47 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer = jwtSection["Issuer"],
             ValidAudience = jwtSection["Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(key),
-            ClockSkew = TimeSpan.Zero
+            ClockSkew = TimeSpan.Zero // tránh delay thời gian hết hạn token
         };
     });
+
 builder.Services.AddAuthorization();
 builder.Services.AddScoped<JwtTokenService>();
 
 var app = builder.Build();
 
-
-// Pipeline
+//==================================================
+// MIDDLEWARE PIPELINE
+//==================================================
 app.UseSwagger();
 app.UseSwaggerUI();
+
 app.UseCors("Wasm");
+
 app.UseHttpsRedirection();
+
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
 
+//==================================================
+// TEST ROUTE & ENDPOINTS PHỤ
+//==================================================
+// Test API mặc định
 app.MapGet("/", () => "HELLO WORLD");
 
-// Test connect
+// Kiểm tra kết nối database
 app.MapGet("/dbchecking", async (BlogDbContext blogDbContext) =>
 {
     try
     {
         await blogDbContext.Database.CanConnectAsync();
-        return Results.Ok("Da ket noi den database");
+        return Results.Ok("Đã kết nối đến database thành công!");
     }
     catch (Exception ex)
     {
-        return Results.Problem($"Loi ket noi database. {ex.Message}");
+        return Results.Problem($"Lỗi kết nối database: {ex.Message}");
     }
 });
 
