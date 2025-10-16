@@ -21,6 +21,6 @@ public class Post
     public bool IsPublished { get; set; } = true;
     public bool IsDeleted { get; set; } = false;
 
-    [JsonIgnore] public User? User { get; set; }                 // <- nullable + ignore
-    [JsonIgnore] public ICollection<Comment> Comments { get; set; } = new List<Comment>(); // <- ignore
+    public User? User { get; set; }
+    public ICollection<Comment> Comments { get; set; } = new List<Comment>();
 }

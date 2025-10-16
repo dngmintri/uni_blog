@@ -2,10 +2,11 @@ using Backend.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Data;
+
 public class BlogDbContext : DbContext
 {
     public BlogDbContext(DbContextOptions<BlogDbContext> options) : base(options) { }
-    
+
     public DbSet<User> Users { get; set; }
     public DbSet<Post> Posts { get; set; }
     public DbSet<Comment> Comments { get; set; }
@@ -27,10 +28,10 @@ public class BlogDbContext : DbContext
             .IsUnique();
 
         modelBuilder.Entity<Post>()
-        .HasOne(p => p.User)
-        .WithMany(u => u.Posts)
-        .HasForeignKey(p => p.UserId)
-        .OnDelete(DeleteBehavior.Cascade);
+            .HasOne(p => p.User)
+            .WithMany(u => u.Posts)
+            .HasForeignKey(p => p.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<Comment>()
             .HasOne(c => c.Post)
