@@ -6,4 +6,5 @@ public class AuthResponse
     public DateTime ExpiresAt { get; set; }
     public string Username { get; set; } = null!;
     public string Role { get; set; } = null!;
+    public string? AvatarUrl { get; set; }
 }
