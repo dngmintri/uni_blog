@@ -1,0 +1,103 @@
+@page "/login"
+@layout AuthLayout
+@using frontend.Models
+@using frontend.Services
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="MaxWidth.Small">
+    <MudPaper Class="pa-8">
+        <div class="text-center mb-6">
+            <MudText Typo="Typo.h4" Color="Color.Primary" GutterBottom="true">
+                Đăng nhập
+            </MudText>
+            <MudText Typo="Typo.body1" Color="Color.Secondary">
+                Chào mừng bạn quay trở lại!
+            </MudText>
+        </div>
+
+        <EditForm Model="@loginRequest" OnValidSubmit="@HandleLogin">
+            <DataAnnotationsValidator />
+            
+            <MudTextField @bind-Value="loginRequest.Username"
+                         Label="Tên đăng nhập"
+                         Variant="Variant.Outlined"
+                         margin="Margin.Normal"
+                         Required="true"
+                         RequiredError="Tên đăng nhập là bắt buộc"
+                         FullWidth="true" />
+
+            <MudTextField @bind-Value="loginRequest.Password"
+                         Label="Mật khẩu"
+                         Variant="Variant.Outlined"
+                         InputType="InputType.Password"
+                         margin="Margin.Normal"
+                         Required="true"
+                         RequiredError="Mật khẩu là bắt buộc"
+                         FullWidth="true" />
+
+            <MudButton Variant="Variant.Filled"
+                      Color="Color.Primary"
+                      ButtonType="ButtonType.Submit"
+                      FullWidth="true"
+                      margin="Margin.Normal"
+                      Size="Size.Large"
+                      Disabled="@isLoading">
+                @if (isLoading)
+                {
+                    <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                    <MudText Class="ms-2">Đang đăng nhập...</MudText>
+                }
+                else
+                {
+                    <MudText>Đăng nhập</MudText>
+                }
+            </MudButton>
+        </EditForm>
+
+        <div class="text-center mt-4">
+            <MudText Typo="Typo.body2">
+                Chưa có tài khoản? 
+                <MudLink Href="/register" Color="Color.Primary">
+                    Đăng ký ngay
+                </MudLink>
+            </MudText>
+        </div>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private LoginRequest loginRequest = new();
+    private bool isLoading = false;
+
+    private async Task HandleLogin()
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            var response = await AuthService.LoginAsync(loginRequest);
+            
+            if (response != null)
+            {
+                Snackbar.Add("Đăng nhập thành công!", Severity.Success);
+                Navigation.NavigateTo("/");
+            }
+            else
+            {
+                Snackbar.Add("Tên đăng nhập hoặc mật khẩu không đúng!", Severity.Error);
+            }
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Có lỗi xảy ra khi đăng nhập!", Severity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+}

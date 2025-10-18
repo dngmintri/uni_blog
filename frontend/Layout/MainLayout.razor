@@ -1,16 +1,47 @@
 ﻿@inherits LayoutComponentBase
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
+@using frontend.Services
+@inject AuthStateService authStateService
 
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+<div class="page">
+    @if (!authStateService.IsAuthenticated)
+    {
+        <div class="sidebar">
+            <NavMenu />
         </div>
+    }
+
+    <main class="@(authStateService.IsAuthenticated ? "main-full" : "")">
+        @if (authStateService.IsAuthenticated)
+        {
+            <NavMenu />
+        }
+        else
+        {
+            <div class="top-row px-4">
+                <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+            </div>
+        }
 
         <article class="content px-4">
             @Body
         </article>
     </main>
 </div>
+
+<style>
+    .main-full {
+        margin-left: 0;
+    }
+</style>
+
+@code {
+    protected override void OnInitialized()
+    {
+        authStateService.OnAuthStateChanged += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        authStateService.OnAuthStateChanged -= StateHasChanged;
+    }
+}

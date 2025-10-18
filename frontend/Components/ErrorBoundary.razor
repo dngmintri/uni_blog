@@ -1,0 +1,86 @@
+@using Microsoft.AspNetCore.Components.Web
+@inject IJSRuntime JSRuntime
+
+<CascadingValue Value="this">
+    @ChildContent
+</CascadingValue>
+
+@if (hasError)
+{
+    <div class="error-container">
+        <div class="error-content">
+            <h2>Oops! Có lỗi xảy ra</h2>
+            <p>Đã xảy ra lỗi không mong muốn. Vui lòng thử lại.</p>
+            <button class="btn btn-primary" @onclick="ReloadPage">
+                Tải lại trang
+            </button>
+        </div>
+    </div>
+}
+
+<style>
+    .error-container {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f8f9fa;
+    }
+    
+    .error-content {
+        text-align: center;
+        padding: 2rem;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .error-content h2 {
+        color: #dc3545;
+        margin-bottom: 1rem;
+    }
+    
+    .error-content p {
+        color: #6c757d;
+        margin-bottom: 2rem;
+    }
+    
+    .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: 500;
+    }
+    
+    .btn-primary {
+        background-color: #007bff;
+        color: white;
+    }
+    
+    .btn-primary:hover {
+        background-color: #0056b3;
+    }
+</style>
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    
+    private bool hasError = false;
+
+    protected override void OnInitialized()
+    {
+        // Subscribe to unhandled exceptions
+    }
+
+    private async Task ReloadPage()
+    {
+        await JSRuntime.InvokeVoidAsync("location.reload");
+    }
+
+    public void HandleException(Exception exception)
+    {
+        hasError = true;
+        StateHasChanged();
+    }
+}

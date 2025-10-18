@@ -70,7 +70,7 @@ builder.Services.AddSwaggerGen(o =>
 // CẤU HÌNH CORS (Cho phép frontend gọi API)
 //==================================================
 builder.Services.AddCors(o => o.AddPolicy("Wasm", p => p
-    .WithOrigins("https://localhost:7172", "http://localhost:5173")
+    .WithOrigins("https://localhost:7172", "http://localhost:5173", "http://localhost:5157")
     .AllowAnyHeader()
     .AllowAnyMethod()));
 

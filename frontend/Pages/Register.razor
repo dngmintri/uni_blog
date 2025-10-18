@@ -1,0 +1,120 @@
+@page "/register"
+@layout AuthLayout
+@using frontend.Models
+@using frontend.Services
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="MaxWidth.Small">
+    <MudPaper Class="pa-8">
+        <div class="text-center mb-6">
+            <MudText Typo="Typo.h4" Color="Color.Primary" GutterBottom="true">
+                Đăng ký
+            </MudText>
+            <MudText Typo="Typo.body1" Color="Color.Secondary">
+                Tạo tài khoản mới để bắt đầu
+            </MudText>
+        </div>
+
+        <EditForm Model="@registerRequest" OnValidSubmit="@HandleRegister">
+            <DataAnnotationsValidator />
+            
+            <MudTextField @bind-Value="registerRequest.Username"
+                         Label="Tên đăng nhập"
+                         Variant="Variant.Outlined"
+                         margin="Margin.Normal"
+                         Required="true"
+                         RequiredError="Tên đăng nhập là bắt buộc"
+                         FullWidth="true" />
+
+            <MudTextField @bind-Value="registerRequest.Email"
+                         Label="Email"
+                         Variant="Variant.Outlined"
+                         InputType="InputType.Email"
+                         margin="Margin.Normal"
+                         Required="true"
+                         RequiredError="Email là bắt buộc"
+                         FullWidth="true" />
+
+            <MudTextField @bind-Value="registerRequest.FullName"
+                         Label="Họ và tên"
+                         Variant="Variant.Outlined"
+                         margin="Margin.Normal"
+                         Required="true"
+                         RequiredError="Họ và tên là bắt buộc"
+                         FullWidth="true" />
+
+            <MudTextField @bind-Value="registerRequest.Password"
+                         Label="Mật khẩu"
+                         Variant="Variant.Outlined"
+                         InputType="InputType.Password"
+                         margin="Margin.Normal"
+                         Required="true"
+                         RequiredError="Mật khẩu là bắt buộc"
+                         FullWidth="true" />
+
+            <MudButton Variant="Variant.Filled"
+                      Color="Color.Primary"
+                      ButtonType="ButtonType.Submit"
+                      FullWidth="true"
+                      margin="Margin.Normal"
+                      Size="Size.Large"
+                      Disabled="@isLoading">
+                @if (isLoading)
+                {
+                    <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                    <MudText Class="ms-2">Đang đăng ký...</MudText>
+                }
+                else
+                {
+                    <MudText>Đăng ký</MudText>
+                }
+            </MudButton>
+        </EditForm>
+
+        <div class="text-center mt-4">
+            <MudText Typo="Typo.body2">
+                Đã có tài khoản? 
+                <MudLink Href="/login" Color="Color.Primary">
+                    Đăng nhập ngay
+                </MudLink>
+            </MudText>
+        </div>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private RegisterRequest registerRequest = new();
+    private bool isLoading = false;
+
+    private async Task HandleRegister()
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            var response = await AuthService.RegisterAsync(registerRequest);
+            
+            if (response != null)
+            {
+                Snackbar.Add("Đăng ký thành công! Bạn đã được đăng nhập tự động.", Severity.Success);
+                Navigation.NavigateTo("/");
+            }
+            else
+            {
+                Snackbar.Add("Tên đăng nhập hoặc email đã tồn tại!", Severity.Error);
+            }
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Có lỗi xảy ra khi đăng ký!", Severity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+}

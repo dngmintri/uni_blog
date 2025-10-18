@@ -1,11 +1,99 @@
 ﻿<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="">frontend</a>
-        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+        <a class="navbar-brand" href="">Uni Blog</a>
+        <div class="d-flex align-items-center">
+            @if (authStateService.IsAuthenticated)
+            {
+                <div class="user-menu">
+                    <MudMenu>
+                        <ActivatorContent>
+                            <div class="user-button">
+                                <div class="user-avatar">
+                                    <MudIcon Icon="Icons.Material.Filled.Person" />
+                                </div>
+                                <span class="user-name">@authStateService.CurrentUser?.Username</span>
+                                <MudIcon Icon="Icons.Material.Filled.ArrowDropDown" Class="dropdown-icon" />
+                            </div>
+                        </ActivatorContent>
+                        <ChildContent>
+                            <MudMenuItem OnClick="ViewProfile" Class="menu-item">
+                                <MudIcon Icon="Icons.Material.Filled.Person" Class="me-2" />
+                                Thông tin cá nhân
+                            </MudMenuItem>
+                            <MudMenuItem OnClick="ViewSettings" Class="menu-item">
+                                <MudIcon Icon="Icons.Material.Filled.Settings" Class="me-2" />
+                                Cài đặt
+                            </MudMenuItem>
+                            <MudDivider />
+                            <MudMenuItem OnClick="Logout" Class="menu-item logout-item">
+                                <MudIcon Icon="Icons.Material.Filled.Logout" Class="me-2" />
+                                Đăng xuất
+                            </MudMenuItem>
+                        </ChildContent>
+                    </MudMenu>
+                </div>
+            }
+            <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+        </div>
     </div>
 </div>
+
+<style>
+    .user-menu {
+        margin-right: 1rem;
+    }
+    
+    .user-button {
+        display: flex;
+        align-items: center;
+        padding: 8px 12px;
+        border-radius: 20px;
+        background-color: rgba(255, 255, 255, 0.1);
+        color: white;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        border: none;
+    }
+    
+    .user-button:hover {
+        background-color: rgba(255, 255, 255, 0.2);
+    }
+    
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background-color: #007bff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 8px;
+    }
+    
+    .user-name {
+        font-weight: 500;
+        margin-right: 4px;
+    }
+    
+    .dropdown-icon {
+        font-size: 16px;
+    }
+    
+    .menu-item {
+        padding: 12px 16px;
+        font-size: 14px;
+    }
+    
+    .logout-item {
+        color: #dc3545;
+    }
+    
+    .logout-item:hover {
+        background-color: #f8f9fa;
+    }
+</style>
 
 <div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
     <nav class="nav flex-column">
@@ -27,6 +115,13 @@
     </nav>
 </div>
 
+@using frontend.Services
+@using MudBlazor
+@inject AuthStateService authStateService
+@inject AuthService authService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
 @code {
     private bool collapseNavMenu = true;
 
@@ -35,5 +130,34 @@
     private void ToggleNavMenu()
     {
         collapseNavMenu = !collapseNavMenu;
+    }
+
+    private void ViewProfile()
+    {
+        // TODO: Navigate to profile page
+        Snackbar.Add("Tính năng xem thông tin cá nhân đang được phát triển!", Severity.Info);
+    }
+
+    private void ViewSettings()
+    {
+        // TODO: Navigate to settings page
+        Snackbar.Add("Tính năng cài đặt đang được phát triển!", Severity.Info);
+    }
+
+    private async void Logout()
+    {
+        await authService.LogoutAsync();
+        Snackbar.Add("Đã đăng xuất thành công!", Severity.Success);
+        Navigation.NavigateTo("/");
+    }
+
+    protected override void OnInitialized()
+    {
+        authStateService.OnAuthStateChanged += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        authStateService.OnAuthStateChanged -= StateHasChanged;
     }
 }

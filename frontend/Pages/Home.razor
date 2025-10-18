@@ -1,7 +1,114 @@
 ﻿@page "/"
+@using frontend.Services
+@inject AuthStateService authStateService
+@inject NavigationManager Navigation
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Trang chủ - Uni Blog</PageTitle>
 
-<h1>Hello, world!</h1>
+@if (authStateService.IsAuthenticated)
+{
+    <div class="home-container">
+        <!-- Trang chủ trắng đơn giản sau khi đăng nhập -->
+    </div>
+}
+else
+{
+    <div class="welcome-container">
+        <div class="welcome-content">
+            <h1>Chào mừng đến với Uni Blog</h1>
+            <p>Nơi chia sẻ kiến thức và kinh nghiệm học tập</p>
+            <div class="auth-buttons">
+                <a href="/login" class="btn btn-primary">Đăng nhập</a>
+                <a href="/register" class="btn btn-outline">Đăng ký</a>
+            </div>
+        </div>
+    </div>
+}
 
-Welcome to your new app.
+<style>
+    .home-container {
+        min-height: 100vh;
+        background-color: #f8f9fa;
+    }
+    
+    .welcome-container {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .welcome-content {
+        text-align: center;
+        color: white;
+        padding: 2rem;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 15px;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+    
+    .welcome-content h1 {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        font-weight: 700;
+    }
+    
+    .welcome-content p {
+        font-size: 1.2rem;
+        margin-bottom: 2rem;
+        opacity: 0.9;
+    }
+    
+    .auth-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+    }
+    
+    .btn {
+        padding: 12px 30px;
+        border-radius: 25px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        display: inline-block;
+    }
+    
+    .btn-primary {
+        background-color: #007bff;
+        color: white;
+        border: 2px solid #007bff;
+    }
+    
+    .btn-primary:hover {
+        background-color: #0056b3;
+        border-color: #0056b3;
+        transform: translateY(-2px);
+    }
+    
+    .btn-outline {
+        background-color: transparent;
+        color: white;
+        border: 2px solid white;
+    }
+    
+    .btn-outline:hover {
+        background-color: white;
+        color: #667eea;
+        transform: translateY(-2px);
+    }
+</style>
+
+@code {
+    protected override void OnInitialized()
+    {
+        authStateService.OnAuthStateChanged += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        authStateService.OnAuthStateChanged -= StateHasChanged;
+    }
+}
