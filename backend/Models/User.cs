@@ -24,6 +24,8 @@ public class User
     public DateTime? DateOfBirth { get; set; }
     [StringLength(10)]
     public string? Gender { get; set; }
+    [StringLength(255)]
+    public string? AvatarUrl { get; set; }  
     public UserRoleEnum Role { get; set; } = UserRoleEnum.User;
     public DateTime CreatedAt { get; set; } = DateTime.Now;
     public DateTime? LastLogin { get; set; }

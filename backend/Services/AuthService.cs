@@ -36,7 +36,7 @@ public class AuthService : IAuthService
 		await _users.SaveChangesAsync();
 
 		var (token, exp) = _jwt.CreateToken(user);
-		return new AuthResponse { AccessToken = token, ExpiresAt = exp, Username = user.Username, Role = user.Role.ToString() };
+		return new AuthResponse { AccessToken = token, ExpiresAt = exp, Username = user.Username, Role = user.Role.ToString(), AvatarUrl = user.AvatarUrl };
 	}
 
 	public async Task<AuthResponse?> LoginAsync(LoginRequest req)
@@ -49,6 +49,6 @@ public class AuthService : IAuthService
 		await _users.SaveChangesAsync();
 
 		var (token, exp) = _jwt.CreateToken(user);
-		return new AuthResponse { AccessToken = token, ExpiresAt = exp, Username = user.Username, Role = user.Role.ToString() };
+		return new AuthResponse { AccessToken = token, ExpiresAt = exp, Username = user.Username, Role = user.Role.ToString(), AvatarUrl = user.AvatarUrl };
 	}
 }
