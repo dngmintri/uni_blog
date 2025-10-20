@@ -7,6 +7,7 @@ using Backend.Repositories;
 using Backend.Repositories.Interfaces;
 using Backend.Services;
 using Backend.Services.Interfaces;
+using Microsoft.AspNetCore.Http.Features;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,6 +25,11 @@ builder.Services.AddDbContext<BlogDbContext>(options =>
 // CẤU HÌNH DỊCH VỤ CƠ BẢN
 //==================================================
 builder.Services.AddControllers();
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 10 * 1024 * 1024; // 10MB
+});
+builder.Services.AddScoped<FileUploadService>();
 builder.Services.AddEndpointsApiExplorer();
 
 //==================================================
@@ -108,7 +114,7 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseCors("Wasm");
-
+app.UseStaticFiles();
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
