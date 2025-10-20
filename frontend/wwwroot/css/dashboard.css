@@ -1,0 +1,266 @@
+/* Reset and base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+    color: #333;
+}
+
+/* Main container - Full width, modern look */
+#container {
+    width: 100%;
+    max-width: none; /* Loại bỏ giới hạn chiều rộng */
+    min-height: 100vh;
+    background: white;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.05); /* Shadow nhẹ hơn, hiện đại */
+    border-radius: 0; /* Không bo góc vì full width */
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header - Gradient hiện đại hơn */
+#header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1.2rem 2rem; /* Padding rộng hơn */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3); /* Shadow gradient */
+    position: relative;
+}
+
+#header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 100" fill="rgba(255,255,255,0.1)"><polygon points="0,100 1000,0 1000,100"/></svg>'); /* Subtle wave pattern */
+    pointer-events: none;
+}
+
+#logo h2 {
+    font-size: 2rem; /* Lớn hơn một chút cho hiện đại */
+    font-weight: 800;
+    letter-spacing: 2px;
+    margin: 0;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Text shadow nhẹ */
+}
+
+#logo h2::after {
+    content: '';
+    display: inline-block;
+    width: 5px;
+    height: 24px;
+    background: linear-gradient(to bottom, #fff, rgba(255,255,255,0.8));
+    margin-left: 10px;
+    border-radius: 3px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* User dropdown image - Hover effect mượt */
+#header img {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Easing hiện đại */
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+#header img:hover {
+    transform: scale(1.1) rotate(5deg); /* Thêm rotate cho fun */
+    border-color: rgba(255, 255, 255, 0.6);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Dropdown menu - Modern glassmorphism */
+.dropdown-menu {
+    border: none;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    border-radius: 16px; /* Bo góc lớn hơn */
+    padding: 0;
+    min-width: 180px;
+    backdrop-filter: blur(10px); /* Glass effect */
+    background: rgba(255, 255, 255, 0.95);
+    overflow: hidden;
+}
+
+.dropdown-item {
+    padding: 1rem 1.5rem;
+    color: #333;
+    transition: all 0.3s ease;
+    border-radius: 0;
+    margin: 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.dropdown-item:hover {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    transform: translateX(5px); /* Slide effect */
+}
+
+/* Content area - Smooth scroll */
+#content {
+    flex: 1;
+    overflow-y: auto;
+    background: linear-gradient(to bottom, #fff 0%, #f8f9fa 100%); /* Subtle gradient */
+    scrollbar-width: thin; /* Modern scrollbar cho Firefox */
+}
+
+#content::-webkit-scrollbar {
+    width: 6px;
+}
+
+#content::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+#content::-webkit-scrollbar-thumb {
+    background: linear-gradient(#667eea, #764ba2);
+    border-radius: 10px;
+}
+
+/* Post blog compose area - Enhanced */
+#post-blog {
+    padding: 0;
+}
+
+#post-blog .d-flex {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(5px); /* Glass cho compose area */
+    border-bottom: 1px solid rgba(233, 236, 239, 0.5);
+    transition: all 0.3s ease;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+#post-blog .d-flex:hover {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    background: rgba(255, 255, 255, 1);
+}
+
+#post-blog img {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 3px solid rgba(102, 126, 234, 0.1);
+}
+
+#post-blog img:hover {
+    transform: scale(1.05);
+    border-color: rgba(102, 126, 234, 0.3);
+}
+
+#post-blog .ms-2 h6 {
+    color: #2c3e50;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+#post-blog .ms-2 small {
+    color: #7f8c8d;
+    font-style: italic;
+    font-size: 0.85rem;
+}
+
+/* Posts list - Modern spacing */
+#posts {
+    padding: 2rem;
+    min-height: 500px; /* Cao hơn cho nội dung */
+}
+
+#posts:empty::before {
+    content: "Chưa có bài viết nào... Hãy bắt đầu sáng tạo!";
+    display: block;
+    text-align: center;
+    color: #95a5a6;
+    font-style: italic;
+    padding: 4rem 2rem;
+    font-size: 1.1rem;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+    border-radius: 12px;
+    margin: 2rem;
+}
+
+/* Responsive - Giữ full width trên mobile */
+@media (max-width: 768px) {
+    #header {
+        padding: 1rem 1.5rem;
+    }
+
+    #logo h2 {
+        font-size: 1.6rem;
+    }
+
+    #posts {
+        padding: 1.5rem;
+    }
+
+    .dropdown-item {
+        padding: 0.875rem 1.25rem;
+    }
+}
+
+/* Additional enhancements */
+.dropdown-toggle::after {
+    display: none;
+}
+
+.dropdown-toggle:focus {
+    box-shadow: none;
+}
+
+/* Animation cho toàn bộ */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+#content > * {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+.post-container {
+        max-width: 600px;
+        margin: 0 auto;
+        background: #fff;
+        border-radius: 12px;
+        padding: 1rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    .post-content p {
+        line-height: 1.4;
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .sticker-img {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border: 1px solid #eee;
+    }
+
+    .comment-item {
+        background: #f8f9fa;
+        padding: 0.5rem;
+        border-radius: 8px;
+    }
