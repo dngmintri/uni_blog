@@ -1,0 +1,167 @@
+@page "/register"
+@using Blazorise
+@using Blazorise.Icons.FontAwesome
+@using frontend.Services
+@inject IAuthService authService
+@inject NavigationManager navigationManager
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white text-center">
+                    <h4><Blazorise.Icons.FontAwesome.Icon Name="IconName.UserPlus" /> Đăng ký tài khoản</h4>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Họ và tên *</label>
+                        <TextEdit @bind-Text="registerRequest.FullName" Placeholder="Nhập họ và tên" Class="form-control" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Tên đăng nhập *</label>
+                        <TextEdit @bind-Text="registerRequest.Username" Placeholder="Nhập tên đăng nhập" Class="form-control" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Email *</label>
+                        <TextEdit @bind-Text="registerRequest.Email" Placeholder="Nhập email" Class="form-control" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Mật khẩu *</label>
+                        <TextEdit @bind-Text="registerRequest.Password" Placeholder="Nhập mật khẩu" Password="true" Class="form-control" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Xác nhận mật khẩu *</label>
+                        <TextEdit @bind-Text="confirmPassword" Placeholder="Nhập lại mật khẩu" Password="true" Class="form-control" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Ngày sinh</label>
+                        <DateEdit @bind-Date="registerRequest.DateOfBirth" Placeholder="Chọn ngày sinh" Class="form-control" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Giới tính</label>
+                        <Select @bind-SelectedValue="registerRequest.Gender" Placeholder="Chọn giới tính" Class="form-control">
+                            <SelectItem TValue="string" Value="@("Nam")">Nam</SelectItem>
+                            <SelectItem TValue="string" Value="@("Nữ")">Nữ</SelectItem>
+                            <SelectItem TValue="string" Value="@("Khác")">Khác</SelectItem>
+                        </Select>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <Alert Color="Color.Danger" Visible="true" class="mt-3">
+                            @errorMessage
+                        </Alert>
+                    }
+
+                    @if (!string.IsNullOrEmpty(successMessage))
+                    {
+                        <Alert Color="Color.Success" Visible="true" class="mt-3">
+                            @successMessage
+                        </Alert>
+                    }
+
+                    <div class="d-grid gap-2 mt-4">
+                        <Button Color="Color.Primary" Clicked="HandleRegister" Disabled="isLoading">
+                            @if (isLoading)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                            }
+                            Đăng ký
+                        </Button>
+                        <Button Color="Color.Secondary" Clicked="GoToLogin">
+                            Đã có tài khoản? Đăng nhập
+                        </Button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private RegisterRequest registerRequest = new();
+    private string confirmPassword = string.Empty;
+    private string errorMessage = string.Empty;
+    private string successMessage = string.Empty;
+    private bool isLoading = false;
+
+    private async Task HandleRegister()
+    {
+        errorMessage = string.Empty;
+        successMessage = string.Empty;
+
+        // Validate required fields
+        if (string.IsNullOrWhiteSpace(registerRequest.FullName) ||
+            string.IsNullOrWhiteSpace(registerRequest.Username) ||
+            string.IsNullOrWhiteSpace(registerRequest.Email) ||
+            string.IsNullOrWhiteSpace(registerRequest.Password))
+        {
+            errorMessage = "Vui lòng điền đầy đủ thông tin bắt buộc!";
+            return;
+        }
+
+        // Check password confirmation
+        if (registerRequest.Password != confirmPassword)
+        {
+            errorMessage = "Mật khẩu xác nhận không khớp!";
+            return;
+        }
+
+        // Validate email format
+        if (!registerRequest.Email.Contains("@"))
+        {
+            errorMessage = "Email không đúng định dạng!";
+            return;
+        }
+
+        // Validate password length
+        if (registerRequest.Password.Length < 6)
+        {
+            errorMessage = "Mật khẩu phải có ít nhất 6 ký tự!";
+            return;
+        }
+
+        isLoading = true;
+
+        try
+        {
+            var result = await authService.RegisterAsync(registerRequest);
+            
+            if (result != null)
+            {
+                successMessage = "Đăng ký thành công! Vui lòng đăng nhập.";
+                
+                // Reset form
+                registerRequest = new();
+                confirmPassword = string.Empty;
+                
+                // Redirect to login after 2 seconds
+                await Task.Delay(2000);
+                navigationManager.NavigateTo("/login");
+            }
+            else
+            {
+                errorMessage = "Đăng ký thất bại! Tên đăng nhập hoặc email đã tồn tại.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Lỗi đăng ký: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void GoToLogin()
+    {
+        navigationManager.NavigateTo("/login");
+    }
+}
