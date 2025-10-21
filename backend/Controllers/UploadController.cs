@@ -21,7 +21,7 @@ public class UploadController : ControllerBase
     {
         try
         {
-            var url = await _fileService.SaveImageAsync(file, "avatars");
+            var url = await _fileService.UploadFileAsync(file, "avatars");
             if (url == null)
                 return BadRequest("No file uploaded");
 
@@ -38,7 +38,7 @@ public class UploadController : ControllerBase
     {
         try
         {
-            var url = await _fileService.SaveImageAsync(file, "posts");
+            var url = await _fileService.UploadFileAsync(file, "posts");
             if (url == null)
                 return BadRequest("No file uploaded");
 

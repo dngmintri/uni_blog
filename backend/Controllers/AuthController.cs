@@ -1,5 +1,6 @@
 using Backend.DTOs.Auth;
 using Backend.Services.Interfaces;
+using Backend.Repositories.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Backend.Controllers;
@@ -9,7 +10,13 @@ namespace Backend.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _auth;
-    public AuthController(IAuthService auth) => _auth = auth;
+    private readonly IUserRepository _userRepository;
+    
+    public AuthController(IAuthService auth, IUserRepository userRepository)
+    {
+        _auth = auth;
+        _userRepository = userRepository;
+    }
 
     [HttpPost("register")]
     public async Task<ActionResult<AuthResponse>> Register([FromBody] RegisterRequest req)
@@ -27,5 +34,30 @@ public class AuthController : ControllerBase
         var res = await _auth.LoginAsync(req);
         if (res is null) return Unauthorized("Invalid credentials");
         return Ok(res);
+    }
+
+    [HttpGet("test-users")]
+    public async Task<ActionResult> TestUsers()
+    {
+        try
+        {
+            var users = await _userRepository.GetAllAsync();
+            return Ok(new { 
+                count = users.Count(), 
+                users = users.Select(u => new { 
+                    u.UserId, 
+                    u.Username, 
+                    u.Email, 
+                    u.FullName,
+                    u.DateOfBirth,
+                    u.Gender,
+                    u.AvatarUrl
+                }) 
+            });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest($"Error: {ex.Message}");
+        }
     }
 }

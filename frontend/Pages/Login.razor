@@ -1,6 +1,7 @@
 @page "/login"
 @using Blazorise
 @using Blazorise.Icons.FontAwesome
+@using Blazorise.Components
 @using frontend.Services
 @inject IAuthService authService
 @inject NavigationManager navigationManager
@@ -17,7 +18,6 @@
                         <label class="form-label">Tên đăng nhập hoặc Email *</label>
                         <TextEdit @bind-Text="loginRequest.Username" Placeholder="Nhập tên đăng nhập hoặc email" Class="form-control" />
                     </div>
-
                     <div class="mb-3">
                         <label class="form-label">Mật khẩu *</label>
                         <TextEdit @bind-Text="loginRequest.Password" Placeholder="Nhập mật khẩu" Password="true" Class="form-control" />
@@ -34,7 +34,7 @@
                         <Button Color="Color.Primary" Clicked="HandleLogin" Disabled="isLoading">
                             @if (isLoading)
                             {
-                                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                             }
                             Đăng nhập
                         </Button>
@@ -73,8 +73,6 @@
             
             if (result != null)
             {
-                // TODO: Lưu token vào localStorage và redirect
-                // await localStorage.SetItemAsync("authToken", result.Token);
                 navigationManager.NavigateTo("/dashboard");
             }
             else

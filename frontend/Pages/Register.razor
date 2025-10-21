@@ -1,6 +1,7 @@
 @page "/register"
 @using Blazorise
 @using Blazorise.Icons.FontAwesome
+@using Blazorise.Components
 @using frontend.Services
 @inject IAuthService authService
 @inject NavigationManager navigationManager
@@ -17,32 +18,26 @@
                         <label class="form-label">Họ và tên *</label>
                         <TextEdit @bind-Text="registerRequest.FullName" Placeholder="Nhập họ và tên" Class="form-control" />
                     </div>
-
                     <div class="mb-3">
                         <label class="form-label">Tên đăng nhập *</label>
                         <TextEdit @bind-Text="registerRequest.Username" Placeholder="Nhập tên đăng nhập" Class="form-control" />
                     </div>
-
                     <div class="mb-3">
                         <label class="form-label">Email *</label>
                         <TextEdit @bind-Text="registerRequest.Email" Placeholder="Nhập email" Class="form-control" />
                     </div>
-
                     <div class="mb-3">
                         <label class="form-label">Mật khẩu *</label>
                         <TextEdit @bind-Text="registerRequest.Password" Placeholder="Nhập mật khẩu" Password="true" Class="form-control" />
                     </div>
-
                     <div class="mb-3">
                         <label class="form-label">Xác nhận mật khẩu *</label>
                         <TextEdit @bind-Text="confirmPassword" Placeholder="Nhập lại mật khẩu" Password="true" Class="form-control" />
                     </div>
-
                     <div class="mb-3">
                         <label class="form-label">Ngày sinh</label>
                         <DateEdit @bind-Date="registerRequest.DateOfBirth" Placeholder="Chọn ngày sinh" Class="form-control" />
                     </div>
-
                     <div class="mb-3">
                         <label class="form-label">Giới tính</label>
                         <Select @bind-SelectedValue="registerRequest.Gender" Placeholder="Chọn giới tính" Class="form-control">
@@ -70,7 +65,7 @@
                         <Button Color="Color.Primary" Clicked="HandleRegister" Disabled="isLoading">
                             @if (isLoading)
                             {
-                                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                             }
                             Đăng ký
                         </Button>
@@ -96,7 +91,7 @@
         errorMessage = string.Empty;
         successMessage = string.Empty;
 
-        // Validate required fields
+        // Manual validation
         if (string.IsNullOrWhiteSpace(registerRequest.FullName) ||
             string.IsNullOrWhiteSpace(registerRequest.Username) ||
             string.IsNullOrWhiteSpace(registerRequest.Email) ||
@@ -106,21 +101,18 @@
             return;
         }
 
-        // Check password confirmation
         if (registerRequest.Password != confirmPassword)
         {
             errorMessage = "Mật khẩu xác nhận không khớp!";
             return;
         }
 
-        // Validate email format
-        if (!registerRequest.Email.Contains("@"))
+        if (!registerRequest.Email.Contains("@") || !registerRequest.Email.Contains("."))
         {
             errorMessage = "Email không đúng định dạng!";
             return;
         }
 
-        // Validate password length
         if (registerRequest.Password.Length < 6)
         {
             errorMessage = "Mật khẩu phải có ít nhất 6 ký tự!";
@@ -131,16 +123,18 @@
 
         try
         {
-            var result = await authService.RegisterAsync(registerRequest);
+            Console.WriteLine($"Sending register request: FullName={registerRequest.FullName}, Username={registerRequest.Username}, Email={registerRequest.Email}, DateOfBirth={registerRequest.DateOfBirth}, Gender={registerRequest.Gender}");
             
+            var result = await authService.RegisterAsync(registerRequest);
+
             if (result != null)
             {
                 successMessage = "Đăng ký thành công! Vui lòng đăng nhập.";
-                
+
                 // Reset form
                 registerRequest = new();
                 confirmPassword = string.Empty;
-                
+
                 // Redirect to login after 2 seconds
                 await Task.Delay(2000);
                 navigationManager.NavigateTo("/login");

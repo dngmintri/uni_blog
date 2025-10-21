@@ -8,4 +8,6 @@ public class RegisterRequest
     [Required, EmailAddress, StringLength(100)] public string Email { get; set; } = null!;
     [Required, StringLength(100)] public string FullName { get; set; } = null!;
     [Required, StringLength(100, MinimumLength = 6)] public string Password { get; set; } = null!;
+    public DateTime? DateOfBirth { get; set; }
+    public string? Gender { get; set; }
 }

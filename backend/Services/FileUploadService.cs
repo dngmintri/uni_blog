@@ -1,6 +1,8 @@
+using Backend.Services.Interfaces;
+
 namespace Backend.Services;
 
-public class FileUploadService
+public class FileUploadService : IFileUploadService
 {
     private readonly IWebHostEnvironment _env;
     private readonly ILogger<FileUploadService> _logger;
@@ -11,7 +13,7 @@ public class FileUploadService
         _logger = logger;
     }
 
-    public async Task<string?> SaveImageAsync(IFormFile file, string subfolder)
+    public async Task<string?> UploadFileAsync(IFormFile file, string subfolder)
     {
         try
         {
@@ -54,14 +56,14 @@ public class FileUploadService
         }
     }
 
-    public bool DeleteImage(string? imageUrl)
+    public bool DeleteFile(string? fileUrl)
     {
         try
         {
-            if (string.IsNullOrEmpty(imageUrl))
+            if (string.IsNullOrEmpty(fileUrl))
                 return false;
 
-            var filePath = Path.Combine(_env.WebRootPath, imageUrl.TrimStart('/'));
+            var filePath = Path.Combine(_env.WebRootPath, fileUrl.TrimStart('/'));
             
             if (File.Exists(filePath))
             {
@@ -73,7 +75,7 @@ public class FileUploadService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error deleting image: {ImageUrl}", imageUrl);
+            _logger.LogError(ex, "Error deleting file: {FileUrl}", fileUrl);
             return false;
         }
     }
