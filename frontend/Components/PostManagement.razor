@@ -1,0 +1,329 @@
+@using frontend.Services
+@inject IAdminService adminService
+
+<div class="post-management">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="mb-0">
+            <Blazorise.Icons.FontAwesome.Icon Name="IconName.FileAlt" class="me-2" />
+            Quản lý bài viết
+        </h3>
+        <Button Color="Color.Primary" @onclick="RefreshPosts">
+            <Blazorise.Icons.FontAwesome.Icon Name="IconName.Sync" class="me-1" />
+            Làm mới
+        </Button>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Đang tải dữ liệu...</p>
+        </div>
+    }
+    else if (posts.Any())
+    {
+        <div class="table-responsive">
+            <table class="table table-hover table-striped">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Tiêu đề</th>
+                        <th>Tác giả</th>
+                        <th>Trạng thái</th>
+                        <th>Lượt xem</th>
+                        <th>Lượt thích</th>
+                        <th>Ngày tạo</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var post in posts)
+                    {
+                        <tr>
+                            <td>@post.Id</td>
+                            <td>
+                                <div class="post-title">
+                                    @post.Title
+                                    @if (post.Title.Length > 50)
+                                    {
+                                        <small class="text-muted">...</small>
+                                    }
+                                </div>
+                            </td>
+                            <td>
+                                <div class="author-info">
+                                    <div class="author-name">@post.AuthorName</div>
+                                    <small class="text-muted">@post.AuthorEmail</small>
+                                </div>
+                            </td>
+                            <td>
+                                <Badge Color="@(post.IsPublished ? Color.Success : Color.Warning)">
+                                    @(post.IsPublished ? "Đã xuất bản" : "Bản nháp")
+                                </Badge>
+                            </td>
+                            <td>
+                                <Blazorise.Icons.FontAwesome.Icon Name="IconName.Eye" class="me-1" />
+                                @post.ViewCount
+                            </td>
+                            <td>
+                                <Blazorise.Icons.FontAwesome.Icon Name="IconName.Heart" class="me-1" />
+                                @post.LikeCount
+                            </td>
+                            <td>@post.CreatedAt.ToString("dd/MM/yyyy")</td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <Button Color="Color.Info" @onclick="() => ViewPost(post)">
+                                        <Blazorise.Icons.FontAwesome.Icon Name="IconName.Eye" />
+                                    </Button>
+                                    <Button Color="Color.Warning" @onclick="() => EditPost(post)">
+                                        <Blazorise.Icons.FontAwesome.Icon Name="IconName.Edit" />
+                                    </Button>
+                                    <Button Color="Color.Success" @onclick="() => TogglePostStatus(post)">
+                                        <Blazorise.Icons.FontAwesome.Icon Name="@(post.IsPublished ? IconName.EyeSlash : IconName.Eye)" />
+                                    </Button>
+                                    <Button Color="Color.Danger" @onclick="() => DeletePost(post)">
+                                        <Blazorise.Icons.FontAwesome.Icon Name="IconName.Times" />
+                                    </Button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info">
+            <h5 class="alert-heading">Không có dữ liệu</h5>
+            Chưa có bài viết nào trong hệ thống.
+        </div>
+    }
+</div>
+
+<!-- View Post Modal -->
+<Modal @ref="viewPostModal" Size="ModalSize.Large">
+    <ModalContent>
+        <ModalHeader>
+            <ModalTitle>Xem bài viết</ModalTitle>
+            <CloseButton @onclick="CloseViewModal" />
+        </ModalHeader>
+        <ModalBody>
+            @if (viewingPost != null)
+            {
+                <div class="post-view">
+                    <h4>@viewingPost.Title</h4>
+                    <div class="post-meta mb-3">
+                        <small class="text-muted">
+                            <Blazorise.Icons.FontAwesome.Icon Name="IconName.User" class="me-1" />
+                            @viewingPost.AuthorName (@viewingPost.AuthorEmail)
+                        </small>
+                        <br>
+                        <small class="text-muted">
+                            <Blazorise.Icons.FontAwesome.Icon Name="IconName.Calendar" class="me-1" />
+                            @viewingPost.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                        </small>
+                        <br>
+                        <small class="text-muted">
+                            <Blazorise.Icons.FontAwesome.Icon Name="IconName.Eye" class="me-1" />
+                            @viewingPost.ViewCount lượt xem
+                            <Blazorise.Icons.FontAwesome.Icon Name="IconName.Heart" class="ms-2 me-1" />
+                            @viewingPost.LikeCount lượt thích
+                        </small>
+                    </div>
+                    <div class="post-content">
+                        @((MarkupString)viewingPost.Content)
+                    </div>
+                </div>
+            }
+        </ModalBody>
+        <ModalFooter>
+            <Button Color="Color.Secondary" @onclick="CloseViewModal">Đóng</Button>
+        </ModalFooter>
+    </ModalContent>
+</Modal>
+
+<!-- Edit Post Modal -->
+<Modal @ref="editPostModal" Size="ModalSize.Large">
+    <ModalContent>
+        <ModalHeader>
+            <ModalTitle>Sửa bài viết</ModalTitle>
+            <CloseButton @onclick="CloseEditModal" />
+        </ModalHeader>
+        <ModalBody>
+            @if (editingPost != null)
+            {
+                <EditForm Model="editingPost" OnValidSubmit="SavePost">
+                    <Blazorise.ValidationSummary />
+                    
+                    <Field>
+                        <FieldLabel>Tiêu đề</FieldLabel>
+                        <TextEdit @bind-Text="editingPost.Title" />
+                    </Field>
+                    
+                    <Field>
+                        <FieldLabel>Nội dung</FieldLabel>
+                        <TextEdit @bind-Text="editingPost.Content" Rows="10" />
+                    </Field>
+                    
+                    <Field>
+                        <Check TValue="bool" @bind-Checked="editingPost.IsPublished">
+                            Đã xuất bản
+                        </Check>
+                    </Field>
+                </EditForm>
+            }
+        </ModalBody>
+        <ModalFooter>
+            <Button Color="Color.Secondary" @onclick="CloseEditModal">Hủy</Button>
+            <Button Color="Color.Primary" @onclick="SavePost">Lưu thay đổi</Button>
+        </ModalFooter>
+    </ModalContent>
+</Modal>
+
+<style>
+    .post-management {
+        background: white;
+        border-radius: 8px;
+        padding: 1.5rem;
+    }
+
+    .post-title {
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .author-info {
+        min-width: 150px;
+    }
+
+    .author-name {
+        font-weight: 500;
+    }
+
+    .table-responsive {
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid #dee2e6;
+    }
+
+    .table th {
+        background-color: #f8f9fa;
+        border-bottom: 2px solid #dee2e6;
+        font-weight: 600;
+    }
+
+    .post-view {
+        max-height: 500px;
+        overflow-y: auto;
+    }
+
+    .post-meta {
+        border-bottom: 1px solid #dee2e6;
+        padding-bottom: 1rem;
+    }
+
+    .post-content {
+        line-height: 1.6;
+    }
+</style>
+
+@code {
+    private List<PostInfo> posts = new();
+    private bool isLoading = true;
+    private Modal? viewPostModal;
+    private Modal? editPostModal;
+    private PostInfo? viewingPost;
+    private PostInfo? editingPost;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPosts();
+    }
+
+    private async Task LoadPosts()
+    {
+        isLoading = true;
+        posts = await adminService.GetAllPostsAsync();
+        isLoading = false;
+        StateHasChanged();
+    }
+
+    private async Task RefreshPosts()
+    {
+        await LoadPosts();
+    }
+
+    private void ViewPost(PostInfo post)
+    {
+        viewingPost = post;
+        viewPostModal?.Show();
+    }
+
+    private void CloseViewModal()
+    {
+        viewPostModal?.Hide();
+        viewingPost = null;
+    }
+
+    private void EditPost(PostInfo post)
+    {
+        editingPost = new PostInfo
+        {
+            Id = post.Id,
+            Title = post.Title,
+            Content = post.Content,
+            AuthorName = post.AuthorName,
+            AuthorEmail = post.AuthorEmail,
+            CreatedAt = post.CreatedAt,
+            UpdatedAt = post.UpdatedAt,
+            IsPublished = post.IsPublished,
+            ViewCount = post.ViewCount,
+            LikeCount = post.LikeCount
+        };
+        editPostModal?.Show();
+    }
+
+    private void CloseEditModal()
+    {
+        editPostModal?.Hide();
+        editingPost = null;
+    }
+
+    private async Task SavePost()
+    {
+        if (editingPost != null)
+        {
+            var success = await adminService.UpdatePostAsync(editingPost.Id, editingPost);
+            if (success)
+            {
+                await LoadPosts();
+                CloseEditModal();
+            }
+        }
+    }
+
+    private async Task TogglePostStatus(PostInfo post)
+    {
+        post.IsPublished = !post.IsPublished;
+        var success = await adminService.UpdatePostAsync(post.Id, post);
+        if (success)
+        {
+            await LoadPosts();
+        }
+    }
+
+    private async Task DeletePost(PostInfo post)
+    {
+        // TODO: Add confirmation dialog
+        var success = await adminService.DeletePostAsync(post.Id);
+        if (success)
+        {
+            await LoadPosts();
+        }
+    }
+}

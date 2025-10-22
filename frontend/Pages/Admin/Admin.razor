@@ -1,0 +1,135 @@
+@page "/admin"
+@using frontend.Services
+@using frontend.Components
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Authorization
+@using Blazorise
+@using Blazorise.Icons.FontAwesome
+@inject IAuthService authService
+@inject NavigationManager navigationManager
+@inject PageTitleService pageTitleService
+@attribute [Authorize(Roles = "Admin")]
+
+<PageTitle>Trang quản trị</PageTitle>
+
+<div class="admin-container">
+    <!-- Header -->
+    <div class="admin-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="admin-title">
+                <Blazorise.Icons.FontAwesome.Icon Name="IconName.User" class="me-2" />
+                Trang quản trị
+            </h1>
+            <div class="admin-actions">
+                <Button Color="Color.Secondary" @onclick="GoBack" class="me-2">
+                    <Blazorise.Icons.FontAwesome.Icon Name="IconName.ArrowLeft" class="me-1" />
+                    Quay lại
+                </Button>
+                <Button Color="Color.Danger" @onclick="Logout">
+                    <Blazorise.Icons.FontAwesome.Icon Name="IconName.Times" class="me-1" />
+                    Đăng xuất
+                </Button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="admin-nav">
+        <div class="nav-tabs">
+            <Button Color="@(activeTab == "users" ? Color.Primary : Color.Light)" 
+                    @onclick="@(() => SetActiveTab("users"))" 
+                    class="me-2">
+                <Blazorise.Icons.FontAwesome.Icon Name="IconName.Users" class="me-1" />
+                Quản lý người dùng
+            </Button>
+            <Button Color="@(activeTab == "posts" ? Color.Primary : Color.Light)" 
+                    @onclick="@(() => SetActiveTab("posts"))">
+                <Blazorise.Icons.FontAwesome.Icon Name="IconName.FileAlt" class="me-1" />
+                Quản lý bài viết
+            </Button>
+        </div>
+        
+        <div class="tab-content">
+            @if (activeTab == "users")
+            {
+                <UserManagement />
+            }
+            else if (activeTab == "posts")
+            {
+                <PostManagement />
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .admin-container {
+        min-height: 100vh;
+        background-color: #f8f9fa;
+        padding: 2rem;
+    }
+
+    .admin-header {
+        background: white;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .admin-title {
+        color: #2c3e50;
+        margin: 0;
+        font-size: 1.8rem;
+        font-weight: 600;
+    }
+
+    .admin-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .admin-nav {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+
+    .nav-tabs {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #dee2e6;
+        background-color: #f8f9fa;
+    }
+
+    .tab-content {
+        padding: 2rem;
+        min-height: 500px;
+    }
+</style>
+
+@code {
+    private string activeTab = "users";
+
+    protected override void OnInitialized()
+    {
+        pageTitleService.Title = "Trang quản trị";
+    }
+
+    private void SetActiveTab(string tab)
+    {
+        activeTab = tab;
+        StateHasChanged();
+    }
+
+    private void GoBack()
+    {
+        navigationManager.NavigateTo("/");
+    }
+
+    private async Task Logout()
+    {
+        await authService.LogoutAsync();
+        navigationManager.NavigateTo("/login");
+    }
+}

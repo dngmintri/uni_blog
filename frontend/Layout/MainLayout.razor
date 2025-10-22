@@ -29,6 +29,10 @@
                         </DropdownToggle>
                         <DropdownMenu>
                             <DropdownItem Clicked="GoToProfile">Xem trang cá nhân</DropdownItem>
+                            @if (currentUser?.Role == "Admin")
+                            {
+                                <DropdownItem Clicked="GoToAdmin">Trang quản trị</DropdownItem>
+                            }
                             <DropdownItem>Cài đặt</DropdownItem>
                             <DropdownItem Clicked="Logout">Đăng xuất</DropdownItem>
                         </DropdownMenu>
@@ -52,7 +56,7 @@
                     <p class="mb-0">&copy; 2024 Uni Blog. Tất cả quyền được bảo lưu.</p>
                 </div>
                 <div class="col-md-6 text-end">
-                    <p class="mb-0">Được phát triển bởi sinh viên</p>
+                    <p class="mb-0">SGU</p>
                 </div>
             </div>
         </div>
@@ -96,5 +100,10 @@
     private void GoToProfile()
     {
         navigationManager.NavigateTo("/profile");
+    }
+
+    private void GoToAdmin()
+    {
+        navigationManager.NavigateTo("/admin");
     }
 }

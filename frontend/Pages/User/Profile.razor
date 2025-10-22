@@ -613,7 +613,7 @@ else
                 Console.WriteLine($"Parsed Avatar URL: {avatarUrl}");
                 
                 // Update database via API (save full URL)
-                var updateResult = await UpdateAvatarInDatabase(avatarUrl);
+                var updateResult = await UpdateAvatarInDatabase(avatarUrl ?? "");
                 if (updateResult)
                 {
                     Console.WriteLine("Avatar URL updated in database");
