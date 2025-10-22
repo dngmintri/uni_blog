@@ -1,16 +1,100 @@
 ﻿@inherits LayoutComponentBase
+@using Blazorise
+@using Blazorise.Icons.FontAwesome
+@using frontend.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@inject PageTitleService PageTitleService
+@inject IAuthService authService
+@inject NavigationManager navigationManager
+
 <div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
-
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+    <!-- Header -->
+    <header class="header">
+        <div class="container-fluid">
+            <div class="d-flex align-items-center justify-content-between">
+                <h1 class="page-title">UniBlog</h1>
+                <div class="user-menu">
+                    <Dropdown>
+                        <DropdownToggle Color="Color.Light">
+                            @if (!string.IsNullOrEmpty(currentUser?.AvatarUrl))
+                            {
+                                <img src="@currentUser.AvatarUrl" style="width:40px;height:40px;border-radius:50%;cursor:pointer">
+                            }
+                            else
+                            {
+                                <div class="d-flex align-items-center justify-content-center bg-light rounded-circle" style="width:40px;height:40px;cursor:pointer">
+                                    <i class="fas fa-user text-muted"></i>
+                                </div>
+                            }
+                        </DropdownToggle>
+                        <DropdownMenu>
+                            <DropdownItem Clicked="GoToProfile">Xem trang cá nhân</DropdownItem>
+                            <DropdownItem>Cài đặt</DropdownItem>
+                            <DropdownItem Clicked="Logout">Đăng xuất</DropdownItem>
+                        </DropdownMenu>
+                    </Dropdown>
+                </div>
+            </div>
         </div>
+    </header>
 
-        <article class="content px-4">
-            @Body
-        </article>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        @Body
     </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="mb-0">&copy; 2024 Uni Blog. Tất cả quyền được bảo lưu.</p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <p class="mb-0">Được phát triển bởi sinh viên</p>
+                </div>
+            </div>
+        </div>
+    </footer>
 </div>
+
+@code {
+    private AuthResponse? currentUser;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCurrentUser();
+    }
+
+    private async Task LoadCurrentUser()
+    {
+        try
+        {
+            currentUser = await authService.GetCurrentUserAsync();
+            
+            if (currentUser != null && !string.IsNullOrEmpty(currentUser.AvatarUrl))
+            {
+                if (currentUser.AvatarUrl.StartsWith("/"))
+                {
+                    currentUser.AvatarUrl = $"http://localhost:5000{currentUser.AvatarUrl}";
+                }
+            }
+        }
+        catch
+        {
+            // Ignore errors
+        }
+    }
+
+    private async Task Logout()
+    {
+        await authService.LogoutAsync();
+        navigationManager.NavigateTo("/login");
+    }
+
+    private void GoToProfile()
+    {
+        navigationManager.NavigateTo("/profile");
+    }
+}

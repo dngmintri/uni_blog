@@ -1,0 +1,14 @@
+@using frontend.Layout
+@inject NavigationManager NavigationManager
+
+@{
+    var currentPath = NavigationManager.Uri;
+    var isAuthPage = currentPath.Contains("/login") || currentPath.Contains("/register");
+    var layoutType = isAuthPage ? typeof(AuthLayout) : typeof(MainLayout);
+}
+
+<RouteView RouteData="@RouteData" DefaultLayout="@layoutType" />
+
+@code {
+    [Parameter] public RouteData RouteData { get; set; } = default!;
+}

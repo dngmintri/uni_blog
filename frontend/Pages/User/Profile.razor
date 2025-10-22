@@ -13,6 +13,7 @@
 @inject IUserService userService
 @inject AuthenticationStateProvider authStateProvider
 @inject NavigationManager navigationManager
+@inject PageTitleService PageTitleService
 
 <link href="css/dashboard.css" rel="stylesheet" />
 
@@ -27,28 +28,13 @@
 else
 {
     <div class="container-fluid">
-        <!-- Header -->
-        <div class="row bg-primary text-white py-3 mb-4">
+        <!-- Back Button -->
+        <div class="row mb-3">
             <div class="col-12">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div class="d-flex align-items-center">
-                        <Button Color="Color.Light" Size="Size.Small" @onclick="GoBack" class="me-3">
-                            <Blazorise.Icons.FontAwesome.Icon Name="IconName.ArrowLeft" />
-                        </Button>
-                        <h4 class="mb-0">Trang cá nhân</h4>
-                    </div>
-                    <div class="d-flex align-items-center">
-                        @if (!string.IsNullOrEmpty(currentUser?.AvatarUrl))
-                        {
-                            <img src="@currentUser.AvatarUrl" style="width:40px;height:40px;border-radius:50%;cursor:pointer" class="me-2">
-                        }
-                        else
-                        {
-                            <img src="/images/siu.jpg" style="width:40px;height:40px;border-radius:50%;cursor:pointer" class="me-2">
-                        }
-                        <span>@(currentUser?.FullName ?? "User")</span>
-                    </div>
-                </div>
+                <Button Color="Color.Light" Size="Size.Small" @onclick="GoBack" class="btn-outline-secondary">
+                    <Blazorise.Icons.FontAwesome.Icon Name="IconName.ArrowLeft" class="me-2" />
+                    Quay lại
+                </Button>
             </div>
         </div>
 
@@ -166,15 +152,15 @@ else
                         <div class="card-body">
                             <div class="mb-3">
                                 <label class="form-label">Mật khẩu hiện tại *</label>
-                                <TextEdit @bind-Text="passwordChange.CurrentPassword" Placeholder="Nhập mật khẩu hiện tại" Password="true" Class="form-control" />
+                                <input type="password" @bind="passwordChange.CurrentPassword" placeholder="Nhập mật khẩu hiện tại" class="form-control" />
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Mật khẩu mới *</label>
-                                <TextEdit @bind-Text="passwordChange.NewPassword" Placeholder="Nhập mật khẩu mới" Password="true" Class="form-control" />
+                                <input type="password" @bind="passwordChange.NewPassword" placeholder="Nhập mật khẩu mới" class="form-control" />
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Xác nhận mật khẩu mới *</label>
-                                <TextEdit @bind-Text="passwordChange.ConfirmPassword" Placeholder="Nhập lại mật khẩu mới" Password="true" Class="form-control" />
+                                <input type="password" @bind="passwordChange.ConfirmPassword" placeholder="Nhập lại mật khẩu mới" class="form-control" />
                             </div>
 
                             @if (!string.IsNullOrEmpty(passwordMessage))
@@ -277,6 +263,7 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        PageTitleService.Title = "Trang cá nhân";
         await LoadCurrentUser();
     }
 
@@ -361,10 +348,19 @@ else
 
         try
         {
+            Console.WriteLine("SaveProfile method called - starting update");
             Console.WriteLine($"Sending update request: FullName={userInfo.FullName}, Email={userInfo.Email}, DateOfBirth={userInfo.DateOfBirth}, Gender='{userInfo.Gender}'");
             Console.WriteLine($"Gender type: {userInfo.Gender?.GetType()}, IsNull: {userInfo.Gender == null}, IsEmpty: {string.IsNullOrEmpty(userInfo.Gender)}");
             
-            var result = await userService.UpdateProfileAsync(userInfo);
+            var serviceUserInfo = new frontend.Services.UserInfo
+            {
+                FullName = userInfo.FullName,
+                Email = userInfo.Email,
+                DateOfBirth = userInfo.DateOfBirth,
+                Gender = userInfo.Gender
+            };
+            Console.WriteLine($"Service UserInfo: FullName={serviceUserInfo.FullName}, Email={serviceUserInfo.Email}, DateOfBirth={serviceUserInfo.DateOfBirth}, Gender='{serviceUserInfo.Gender}'");
+            var result = await userService.UpdateProfileAsync(serviceUserInfo);
             Console.WriteLine($"Update result: {result}");
             
             if (result)
@@ -684,23 +680,25 @@ else
             isSuccess = false;
         }
     }
+
+    public class UserInfo
+    {
+        public string FullName { get; set; } = string.Empty;
+        public string Username { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Role { get; set; } = string.Empty;
+        public string? AvatarUrl { get; set; }
+        public DateTime? DateOfBirth { get; set; }
+        public string? Gender { get; set; }
+    }
+
+    public class PasswordChange
+    {
+        public string CurrentPassword { get; set; } = string.Empty;
+        public string NewPassword { get; set; } = string.Empty;
+        public string ConfirmPassword { get; set; } = string.Empty;
+    }
 }
 
-public class UserInfo
-{
-    public string FullName { get; set; } = string.Empty;
-    public string Username { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
-    public string Role { get; set; } = string.Empty;
-    public string? AvatarUrl { get; set; }
-    public DateTime? DateOfBirth { get; set; }
-    public string? Gender { get; set; }
-}
 
-public class PasswordChange
-{
-    public string CurrentPassword { get; set; } = string.Empty;
-    public string NewPassword { get; set; } = string.Empty;
-    public string ConfirmPassword { get; set; } = string.Empty;
-}
 

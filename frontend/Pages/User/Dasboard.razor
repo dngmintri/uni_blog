@@ -6,12 +6,13 @@
 @inject IAuthService authService
 @inject AuthenticationStateProvider authStateProvider
 @inject NavigationManager navigationManager
+@inject PageTitleService PageTitleService
 
 <link href="css/dashboard.css" rel="stylesheet" />
 
 @if (isLoading)
 {
-    <div class="d-flex justify-content-center align-items-center" style="height: 100vh;">
+    <div class="d-flex justify-content-center align-items-center" style="height: 50vh;">
         <div class="spinner-border text-primary" role="status">
             <span class="visually-hidden">Loading...</span>
         </div>
@@ -19,55 +20,46 @@
 }
 else
 {
-    <div id="container">
-        <div id="header">
-            <div id="logo"><h2>Uni_Blog</h2></div>
-
-            <Dropdown>
-                <DropdownToggle>
-                    @if (!string.IsNullOrEmpty(currentUser?.AvatarUrl))
-                    {
-                        <img src="@currentUser.AvatarUrl" style="width:40px;height:40px;border-radius:50%;cursor:pointer">
-                    }
-                    else
-                    {
-                        <div class="d-flex align-items-center justify-content-center bg-light rounded-circle" style="width:40px;height:40px;cursor:pointer">
-                            <Blazorise.Icons.FontAwesome.Icon Name="IconName.User" Size="IconSize.Small" Class="text-muted" />
-                        </div>
-                    }
-                </DropdownToggle>
-                <DropdownMenu>
-                    <DropdownItem Clicked="GoToProfile">Xem trang cá nhân</DropdownItem>
-                    <DropdownItem>Cài đặt</DropdownItem>
-                    <DropdownItem Clicked="Logout">Đăng xuất</DropdownItem>
-                </DropdownMenu>
-            </Dropdown>
-        </div>
-
-        <div id="content">
-            <div id="post-blog">
-                <div class="d-flex justify-content-between align-items-center p-3 bg-light border-bottom">
-                    <div class="d-flex align-items-center">
-                        @if (!string.IsNullOrEmpty(currentUser?.AvatarUrl))
-                        {
-                            <img src="@currentUser.AvatarUrl" style="width:40px;height:40px;border-radius:50%;cursor:pointer">
-                        }
-                        else
-                        {
-                            <div class="d-flex align-items-center justify-content-center bg-light rounded-circle" style="width:40px;height:40px;cursor:pointer">
-                                <Blazorise.Icons.FontAwesome.Icon Name="IconName.User" Size="IconSize.Small" Class="text-muted" />
-                            </div>
-                        }
-                        <div class="ms-2 flex-grow-1">
-                            <h6 class="mb-1">@(currentUser?.FullName ?? "User")</h6>
-                            <InputText Placeholder="bạn đang nghĩ gì thế?" Class="w-100" @onfocus="OpenCreateModal" />
-                        </div>
-                    </div>
-                    <Button Color="Color.Primary" Size="Size.Small" Clicked="OpenCreateModal">Đăng bài</Button>
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2>Dashboard</h2>
                 </div>
             </div>
-            
-            <div class="post-container">
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                @if (!string.IsNullOrEmpty(currentUser?.AvatarUrl))
+                                {
+                                    <img src="@currentUser.AvatarUrl" style="width:40px;height:40px;border-radius:50%;cursor:pointer">
+                                }
+                                else
+                                {
+                                    <div class="d-flex align-items-center justify-content-center bg-light rounded-circle" style="width:40px;height:40px;cursor:pointer">
+                                        <Blazorise.Icons.FontAwesome.Icon Name="IconName.User" Size="IconSize.Small" Class="text-muted" />
+                                    </div>
+                                }
+                                <div class="ms-2 flex-grow-1">
+                                    <h6 class="mb-1">@(currentUser?.FullName ?? "User")</h6>
+                                    <InputText Placeholder="bạn đang nghĩ gì thế?" Class="w-100" @onfocus="OpenCreateModal" />
+                                </div>
+                            </div>
+                            <Button Color="Color.Primary" Size="Size.Small" Clicked="OpenCreateModal">Đăng bài</Button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-12">
+                <div class="post-container">
                 <div class="post-header d-flex align-items-start mb-3">
                     <img src="images/siu.jpg" alt="User Avatar" class="rounded-circle me-3" style="width: 50px; height: 50px;" />
                     <div class="flex-grow-1">
@@ -96,6 +88,7 @@ else
                     <Button Color="Color.Secondary" Size="Size.Small" IconName="Icons.FontAwesome.Solid.Comment" Class="me-2" Clicked="OpenPostModal">
                         Bình luận
                     </Button>
+                </div>
                 </div>
             </div>
         </div>
@@ -226,8 +219,6 @@ else
 
 <style>
     .post-container {
-        max-width: 600px;
-        margin: 2rem auto;
         background: #fff;
         border-radius: 12px;
         padding: 1rem;
@@ -288,6 +279,7 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        PageTitleService.Title = "Dashboard";
         await LoadCurrentUser();
     }
 
@@ -325,11 +317,6 @@ else
         }
     }
 
-    private async Task Logout()
-    {
-        await authService.LogoutAsync();
-        navigationManager.NavigateTo("/login");
-    }
 
     private Task OpenCreateModal()
     {
@@ -371,8 +358,4 @@ else
         return postModalRef.Hide();
     }
 
-    private void GoToProfile()
-    {
-        navigationManager.NavigateTo("/profile");
-    }
 }

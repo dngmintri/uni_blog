@@ -6,7 +6,7 @@
 @inject IAuthService authService
 @inject NavigationManager navigationManager
 
-<div class="container mt-5">
+<div class="container">
     <div class="row justify-content-center">
         <div class="col-md-6 col-lg-4">
             <div class="card shadow">
@@ -28,11 +28,11 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Mật khẩu *</label>
-                        <TextEdit @bind-Text="registerRequest.Password" Placeholder="Nhập mật khẩu" Password="true" Class="form-control" />
+                        <input type="password" @bind="registerRequest.Password" placeholder="Nhập mật khẩu" class="form-control" />
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Xác nhận mật khẩu *</label>
-                        <TextEdit @bind-Text="confirmPassword" Placeholder="Nhập lại mật khẩu" Password="true" Class="form-control" />
+                        <input type="password" @bind="confirmPassword" placeholder="Nhập lại mật khẩu" class="form-control" />
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Ngày sinh</label>

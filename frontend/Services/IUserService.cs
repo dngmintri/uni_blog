@@ -6,7 +6,7 @@ namespace frontend.Services
     {
         Task<AuthResponse?> GetUserProfileAsync();
         Task<bool> UpdateProfileAsync(UserInfo userInfo);
-        Task<bool> ChangePasswordAsync(PasswordChange passwordChange);
+        Task<bool> ChangePasswordAsync(frontend.Pages.User.Profile.PasswordChange passwordChange);
         Task<bool> UploadAvatarAsync(IFileEntry file);
     }
 

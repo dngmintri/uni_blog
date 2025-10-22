@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using Blazorise;
+using Blazored.LocalStorage;
 
 namespace frontend.Services;
 
@@ -49,12 +50,26 @@ public class UserService : IUserService
         try
         {
             var token = await _localStorage.GetItemAsync<string>("authToken");
+            Console.WriteLine($"UserService token: {token?.Substring(0, Math.Min(20, token?.Length ?? 0))}...");
             if (string.IsNullOrEmpty(token))
+            {
+                Console.WriteLine("UserService: No token found");
                 return false;
+            }
 
             _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            Console.WriteLine("UserService: Authorization header set");
 
-            var json = JsonSerializer.Serialize(userInfo, _jsonOptions);
+            // Tạo object theo format backend expect
+            var updateRequest = new
+            {
+                FullName = userInfo.FullName,
+                Email = userInfo.Email,
+                DateOfBirth = userInfo.DateOfBirth?.ToString("yyyy-MM-dd"),
+                Gender = userInfo.Gender
+            };
+            
+            var json = JsonSerializer.Serialize(updateRequest, _jsonOptions);
             Console.WriteLine($"UserService sending JSON: {json}");
             
             var content = new StringContent(json, Encoding.UTF8, "application/json");
@@ -62,10 +77,16 @@ public class UserService : IUserService
             var response = await _httpClient.PutAsync("api/users/profile", content);
             Console.WriteLine($"UserService response status: {response.StatusCode}");
             
+            var responseContent = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"UserService response content: {responseContent}");
+            
             if (!response.IsSuccessStatusCode)
             {
-                var errorContent = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"UserService error response: {errorContent}");
+                Console.WriteLine($"UserService error response: {responseContent}");
+            }
+            else
+            {
+                Console.WriteLine($"UserService success response: {responseContent}");
             }
             
             return response.IsSuccessStatusCode;
@@ -77,7 +98,7 @@ public class UserService : IUserService
         }
     }
 
-    public async Task<bool> ChangePasswordAsync(PasswordChange passwordChange)
+    public async Task<bool> ChangePasswordAsync(frontend.Pages.User.Profile.PasswordChange passwordChange)
     {
         try
         {
@@ -87,7 +108,14 @@ public class UserService : IUserService
 
             _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
-            var json = JsonSerializer.Serialize(passwordChange, _jsonOptions);
+            // Tạo object theo format backend expect (chỉ có CurrentPassword và NewPassword)
+            var changePasswordRequest = new
+            {
+                CurrentPassword = passwordChange.CurrentPassword,
+                NewPassword = passwordChange.NewPassword
+            };
+            
+            var json = JsonSerializer.Serialize(changePasswordRequest, _jsonOptions);
             Console.WriteLine($"UserService ChangePassword sending JSON: {json}");
             
             var content = new StringContent(json, Encoding.UTF8, "application/json");

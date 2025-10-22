@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Blazorise;
 using Blazorise.Bootstrap5;
 using Blazorise.Icons.FontAwesome;
+using Blazored.LocalStorage;
 using frontend.Services;
 using frontend;
 
@@ -15,7 +16,7 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://localhost:5000") });
 
 // Đăng ký LocalStorage Service
-builder.Services.AddScoped<ILocalStorageService, LocalStorageService>();
+builder.Services.AddBlazoredLocalStorage();
 
 // Đăng ký AuthStateProvider
 builder.Services.AddScoped<AuthStateProvider>();
@@ -26,6 +27,9 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 
 // Đăng ký UserService
 builder.Services.AddScoped<IUserService, UserService>();
+
+// Đăng ký PageTitleService
+builder.Services.AddScoped<PageTitleService>();
 
 // Đăng ký Authorization
 builder.Services.AddAuthorizationCore();
