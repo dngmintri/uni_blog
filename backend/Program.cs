@@ -44,6 +44,7 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IPostService, PostService>();
 builder.Services.AddScoped<ICommentService, CommentService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IFileUploadService, FileUploadService>();
 
 // JWT Token Service
 builder.Services.AddSingleton<JwtTokenService>();
@@ -76,7 +77,7 @@ builder.Services.AddSwaggerGen(o =>
 // CẤU HÌNH CORS (Cho phép frontend gọi API)
 //==================================================
 builder.Services.AddCors(o => o.AddPolicy("Wasm", p => p
-    .WithOrigins("https://localhost:7172", "http://localhost:5173")
+    .WithOrigins("http://localhost:5000", "http://localhost:5001", "https://localhost:7172", "https://localhost:5173")
     .AllowAnyHeader()
     .AllowAnyMethod()));
 

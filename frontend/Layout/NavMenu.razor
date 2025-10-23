@@ -1,6 +1,9 @@
 ﻿<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="">frontend</a>
+        <a class="navbar-brand d-flex align-items-center" href="">
+            <i class="fas fa-blog text-white me-2" style="font-size: 1.5rem;"></i>
+            UniBlog
+        </a>
         <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -12,6 +15,26 @@
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
                 <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+            </NavLink>
+        </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="dashboard">
+                        <span class="bi bi-speedometer2" aria-hidden="true"></span> Dashboard
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="profile">
+                        <span class="bi bi-person" aria-hidden="true"></span> Trang cá nhân
+                    </NavLink>
+                </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="register">
+                <span class="bi bi-person-plus" aria-hidden="true"></span> Đăng ký
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="login">
+                <span class="bi bi-box-arrow-in-right" aria-hidden="true"></span> Đăng nhập
             </NavLink>
         </div>
         <div class="nav-item px-3">

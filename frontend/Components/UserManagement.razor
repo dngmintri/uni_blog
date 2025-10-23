@@ -1,0 +1,285 @@
+@using frontend.Services
+@inject IAdminService adminService
+
+<div class="user-management">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="mb-0">
+            <Blazorise.Icons.FontAwesome.Icon Name="IconName.Users" class="me-2" />
+            Quản lý người dùng
+        </h3>
+        <Button Color="Color.Primary" @onclick="RefreshUsers">
+            <Blazorise.Icons.FontAwesome.Icon Name="IconName.Sync" class="me-1" />
+            Làm mới
+        </Button>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Đang tải dữ liệu...</p>
+        </div>
+    }
+    else if (users.Any())
+    {
+        <div class="table-responsive">
+            <table class="table table-hover table-striped">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Avatar</th>
+                        <th>Tên đăng nhập</th>
+                        <th>Họ và tên</th>
+                        <th>Email</th>
+                        <th>Vai trò</th>
+                        <th>Trạng thái</th>
+                        <th>Ngày tạo</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in users)
+                    {
+                        <tr>
+                            <td>@user.Id</td>
+                            <td>
+                                @if (!string.IsNullOrEmpty(user.AvatarUrl))
+                                {
+                                    <img src="@user.AvatarUrl" alt="Avatar" class="user-avatar" />
+                                }
+                                else
+                                {
+                                    <div class="user-avatar-placeholder">
+                                        <Blazorise.Icons.FontAwesome.Icon Name="IconName.User" />
+                                    </div>
+                                }
+                            </td>
+                            <td>@user.Username</td>
+                            <td>@user.FullName</td>
+                            <td>@user.Email</td>
+                            <td>
+                                <Badge Color="@(user.Role == "Admin" ? Color.Danger : Color.Info)">
+                                    @user.Role
+                                </Badge>
+                            </td>
+                            <td>
+                                <Badge Color="@(user.IsActive ? Color.Success : Color.Secondary)">
+                                    @(user.IsActive ? "Hoạt động" : "Không hoạt động")
+                                </Badge>
+                            </td>
+                            <td>@user.CreatedAt.ToString("dd/MM/yyyy")</td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <Button Color="Color.Info" @onclick="() => EditUser(user)">
+                                        <Blazorise.Icons.FontAwesome.Icon Name="IconName.Edit" />
+                                    </Button>
+                                    <Button Color="Color.Warning" @onclick="() => ToggleUserStatus(user)">
+                                        <Blazorise.Icons.FontAwesome.Icon Name="@(user.IsActive ? IconName.Ban : IconName.Check)" />
+                                    </Button>
+                                    <Button Color="Color.Danger" @onclick="() => DeleteUser(user)">
+                                        <Blazorise.Icons.FontAwesome.Icon Name="IconName.Times" />
+                                    </Button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info">
+            <h5 class="alert-heading">Không có dữ liệu</h5>
+            Chưa có người dùng nào trong hệ thống.
+        </div>
+    }
+</div>
+
+<!-- Edit User Modal -->
+<Modal @ref="editUserModal" Size="ModalSize.Large">
+    <ModalContent>
+        <ModalHeader>
+            <ModalTitle>Sửa thông tin người dùng</ModalTitle>
+            <CloseButton @onclick="CloseEditModal" />
+        </ModalHeader>
+        <ModalBody>
+            @if (editingUser != null)
+            {
+                <EditForm Model="editingUser" OnValidSubmit="SaveUser">
+                    <Blazorise.ValidationSummary />
+                    
+                    <Field>
+                        <FieldLabel>Tên đăng nhập</FieldLabel>
+                        <TextEdit @bind-Text="editingUser.Username" Disabled="true" />
+                    </Field>
+                    
+                    <Field>
+                        <FieldLabel>Họ và tên</FieldLabel>
+                        <TextEdit @bind-Text="editingUser.FullName" />
+                    </Field>
+                    
+                    <Field>
+                        <FieldLabel>Email</FieldLabel>
+                        <TextEdit @bind-Text="editingUser.Email" />
+                    </Field>
+                    
+                    <Field>
+                        <FieldLabel>Vai trò</FieldLabel>
+                        <Select @bind-SelectedValue="editingUser.Role">
+                            <SelectItem TValue="string" Value="@("User")">User</SelectItem>
+                            <SelectItem TValue="string" Value="@("Admin")">Admin</SelectItem>
+                        </Select>
+                    </Field>
+                    
+                    <Field>
+                        <FieldLabel>Giới tính</FieldLabel>
+                        <Select @bind-SelectedValue="editingUser.Gender">
+                            <SelectItem TValue="string" Value="@((string?)null)">Chọn giới tính</SelectItem>
+                            <SelectItem TValue="string" Value="@("Nam")">Nam</SelectItem>
+                            <SelectItem TValue="string" Value="@("Nữ")">Nữ</SelectItem>
+                            <SelectItem TValue="string" Value="@("Khác")">Khác</SelectItem>
+                        </Select>
+                    </Field>
+                    
+                    <Field>
+                        <FieldLabel>Ngày sinh</FieldLabel>
+                        <DateEdit @bind-Date="editingUser.DateOfBirth" />
+                    </Field>
+                    
+                    <Field>
+                        <Check TValue="bool" @bind-Checked="editingUser.IsActive">
+                            Tài khoản hoạt động
+                        </Check>
+                    </Field>
+                </EditForm>
+            }
+        </ModalBody>
+        <ModalFooter>
+            <Button Color="Color.Secondary" @onclick="CloseEditModal">Hủy</Button>
+            <Button Color="Color.Primary" @onclick="SaveUser">Lưu thay đổi</Button>
+        </ModalFooter>
+    </ModalContent>
+</Modal>
+
+<style>
+    .user-management {
+        background: white;
+        border-radius: 8px;
+        padding: 1.5rem;
+    }
+
+    .user-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .user-avatar-placeholder {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: #e9ecef;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #6c757d;
+    }
+
+    .table-responsive {
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid #dee2e6;
+    }
+
+    .table th {
+        background-color: #f8f9fa;
+        border-bottom: 2px solid #dee2e6;
+        font-weight: 600;
+    }
+</style>
+
+@code {
+    private List<AdminUserInfo> users = new();
+    private bool isLoading = true;
+    private Modal? editUserModal;
+    private AdminUserInfo? editingUser;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsers();
+    }
+
+    private async Task LoadUsers()
+    {
+        isLoading = true;
+        users = await adminService.GetAllUsersAsync();
+        isLoading = false;
+        StateHasChanged();
+    }
+
+    private async Task RefreshUsers()
+    {
+        await LoadUsers();
+    }
+
+    private void EditUser(AdminUserInfo user)
+    {
+        editingUser = new AdminUserInfo
+        {
+            Id = user.Id,
+            Username = user.Username,
+            Email = user.Email,
+            FullName = user.FullName,
+            Role = user.Role,
+            AvatarUrl = user.AvatarUrl,
+            DateOfBirth = user.DateOfBirth,
+            Gender = user.Gender,
+            CreatedAt = user.CreatedAt,
+            IsActive = user.IsActive
+        };
+        editUserModal?.Show();
+    }
+
+    private void CloseEditModal()
+    {
+        editUserModal?.Hide();
+        editingUser = null;
+    }
+
+    private async Task SaveUser()
+    {
+        if (editingUser != null)
+        {
+            var success = await adminService.UpdateUserAsync(editingUser.Id, editingUser);
+            if (success)
+            {
+                await LoadUsers();
+                CloseEditModal();
+            }
+        }
+    }
+
+    private async Task ToggleUserStatus(AdminUserInfo user)
+    {
+        user.IsActive = !user.IsActive;
+        var success = await adminService.UpdateUserAsync(user.Id, user);
+        if (success)
+        {
+            await LoadUsers();
+        }
+    }
+
+    private async Task DeleteUser(AdminUserInfo user)
+    {
+        // TODO: Add confirmation dialog
+        var success = await adminService.DeleteUserAsync(user.Id);
+        if (success)
+        {
+            await LoadUsers();
+        }
+    }
+}

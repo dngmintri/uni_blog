@@ -1,0 +1,704 @@
+@page "/profile"
+@using Blazorise
+@using Blazorise.Icons.FontAwesome
+@using Blazorise.Components
+@using frontend.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Forms
+@using System.Linq
+@using System.Net.Http
+@using System.Text.Json
+@inject IAuthService authService
+@inject IUserService userService
+@inject AuthenticationStateProvider authStateProvider
+@inject NavigationManager navigationManager
+@inject PageTitleService PageTitleService
+
+<link href="css/dashboard.css" rel="stylesheet" />
+
+@if (isLoading)
+{
+    <div class="d-flex justify-content-center align-items-center" style="height: 100vh;">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+}
+else
+{
+    <div class="container-fluid">
+        <!-- Back Button -->
+        <div class="row mb-3">
+            <div class="col-12">
+                <Button Color="Color.Light" Size="Size.Small" @onclick="GoBack" class="btn-outline-secondary">
+                    <Blazorise.Icons.FontAwesome.Icon Name="IconName.ArrowLeft" class="me-2" />
+                    Quay lại
+                </Button>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            @if (!string.IsNullOrEmpty(currentUser?.AvatarUrl))
+                            {
+                                <img src="@currentUser.AvatarUrl" class="rounded-circle" style="width: 120px; height: 120px; object-fit: cover;">
+                            }
+                            else
+                            {
+                                <div class="rounded-circle d-flex align-items-center justify-content-center bg-light" style="width: 120px; height: 120px; margin: 0 auto;">
+                                    <Blazorise.Icons.FontAwesome.Icon Name="IconName.User" Size="IconSize.X3" Class="text-muted" />
+                                </div>
+                            }
+                        </div>
+                        <h5>@(currentUser?.FullName ?? "User")</h5>
+                        <p class="text-muted">@(currentUser?.Username ?? "")</p>
+                        <Button Color="Color.Primary" Size="Size.Small" @onclick="OpenAvatarModal">
+                            <Blazorise.Icons.FontAwesome.Icon Name="IconName.Camera" /> Đổi ảnh đại diện
+                        </Button>
+                    </div>
+                </div>
+
+                <!-- Navigation -->
+                <div class="card mt-3">
+                    <div class="list-group list-group-flush">
+                        <a class="list-group-item list-group-item-action @(activeTab == "info" ? "active" : "")" @onclick='() => SetActiveTab("info")'>
+                            <Blazorise.Icons.FontAwesome.Icon Name="IconName.User" /> Thông tin cá nhân
+                        </a>
+                        <a class="list-group-item list-group-item-action @(activeTab == "security" ? "active" : "")" @onclick='() => SetActiveTab("security")'>
+                            <Blazorise.Icons.FontAwesome.Icon Name="IconName.Lock" /> Bảo mật
+                        </a>
+                        <a class="list-group-item list-group-item-action @(activeTab == "posts" ? "active" : "")" @onclick='() => SetActiveTab("posts")'>
+                            <Blazorise.Icons.FontAwesome.Icon Name="IconName.File" /> Bài viết của tôi
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-9">
+                @if (activeTab == "info")
+                {
+                    <!-- Thông tin cá nhân -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Thông tin cá nhân</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Họ và tên *</label>
+                                        <TextEdit @bind-Text="userInfo.FullName" Placeholder="Nhập họ và tên" Class="form-control" />
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Email *</label>
+                                        <TextEdit @bind-Text="userInfo.Email" Placeholder="Nhập email" Class="form-control" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Ngày sinh</label>
+                                        <DateEdit @bind-Date="userInfo.DateOfBirth" Placeholder="Chọn ngày sinh" Class="form-control" />
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Giới tính</label>
+                                        <Select @bind-SelectedValue="userInfo.Gender" Placeholder="Chọn giới tính" Class="form-control">
+                                            <SelectItem TValue="string" Value="@("Nam")">Nam</SelectItem>
+                                            <SelectItem TValue="string" Value="@("Nữ")">Nữ</SelectItem>
+                                            <SelectItem TValue="string" Value="@("Khác")">Khác</SelectItem>
+                                        </Select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(message))
+                            {
+                                <Alert Color="@(isSuccess ? Color.Success : Color.Danger)" Visible="true" class="mt-3">
+                                    @message
+                                </Alert>
+                            }
+
+                            <div class="d-flex justify-content-end mt-4">
+                                <Button Color="Color.Secondary" @onclick="ResetForm" class="me-2">Hủy</Button>
+                                <Button Color="Color.Primary" @onclick="SaveProfile" Disabled="isSaving">
+                                    @if (isSaving)
+                                    {
+                                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                    }
+                                    Lưu thay đổi
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else if (activeTab == "security")
+                {
+                    <!-- Bảo mật -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Thay đổi mật khẩu</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label">Mật khẩu hiện tại *</label>
+                                <input type="password" @bind="passwordChange.CurrentPassword" placeholder="Nhập mật khẩu hiện tại" class="form-control" />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Mật khẩu mới *</label>
+                                <input type="password" @bind="passwordChange.NewPassword" placeholder="Nhập mật khẩu mới" class="form-control" />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Xác nhận mật khẩu mới *</label>
+                                <input type="password" @bind="passwordChange.ConfirmPassword" placeholder="Nhập lại mật khẩu mới" class="form-control" />
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(passwordMessage))
+                            {
+                                <Alert Color="@(isPasswordSuccess ? Color.Success : Color.Danger)" Visible="true" class="mt-3">
+                                    @passwordMessage
+                                </Alert>
+                            }
+
+                            <div class="d-flex justify-content-end mt-4">
+                                <Button Color="Color.Primary" @onclick="ChangePassword" Disabled="isChangingPassword">
+                                    @if (isChangingPassword)
+                                    {
+                                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                    }
+                                    Đổi mật khẩu
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else if (activeTab == "posts")
+                {
+                    <!-- Bài viết của tôi -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Bài viết của tôi</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="text-center text-muted py-5">
+                                <Blazorise.Icons.FontAwesome.Icon Name="IconName.File" Size="IconSize.X3" />
+                                <p class="mt-3">Chưa có bài viết nào</p>
+                                <Button Color="Color.Primary" @onclick="GoToDashboard">Viết bài mới</Button>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal đổi ảnh đại diện -->
+    <Modal @ref="avatarModalRef" Visible="@IsAvatarModalOpen" VisibleChanged="OnAvatarVisibleChanged">
+        <ModalContent Centered="true">
+            <ModalHeader>
+                <ModalTitle>Đổi ảnh đại diện</ModalTitle>
+                <CloseButton Clicked="CloseAvatarModal" />
+            </ModalHeader>
+            <ModalBody>
+                <div class="text-center">
+                    <div class="mb-3">
+                        @if (!string.IsNullOrEmpty(avatarPreview))
+                        {
+                            <img src="@avatarPreview" class="rounded-circle" style="width: 150px; height: 150px; object-fit: cover;">
+                        }
+                        else if (!string.IsNullOrEmpty(currentUser?.AvatarUrl))
+                        {
+                            <img src="@currentUser.AvatarUrl" class="rounded-circle" style="width: 150px; height: 150px; object-fit: cover;">
+                        }
+                        else
+                        {
+                            <div class="rounded-circle d-flex align-items-center justify-content-center bg-light" style="width: 150px; height: 150px; margin: 0 auto;">
+                                <Blazorise.Icons.FontAwesome.Icon Name="IconName.User" Size="IconSize.X3" Class="text-muted" />
+                            </div>
+                        }
+                    </div>
+                    <InputFile OnChange="OnFileSelected" accept=".jpg,.jpeg,.png,.gif" class="form-control" />
+                    <small class="text-muted">Chọn ảnh JPG, PNG hoặc GIF (tối đa 5MB)</small>
+                </div>
+            </ModalBody>
+            <ModalFooter>
+                <Button Color="Color.Secondary" Clicked="CloseAvatarModal">Hủy</Button>
+                <Button Color="Color.Primary" @onclick="UploadAvatar" Disabled="@(selectedFile == null)">
+                    Cập nhật ảnh (@(selectedFile != null ? "1 file" : "0 files"))
+                </Button>
+            </ModalFooter>
+        </ModalContent>
+    </Modal>
+}
+
+@code {
+    private Modal avatarModalRef = default!;
+    
+    private string activeTab = "info";
+    private AuthResponse? currentUser;
+    private UserInfo userInfo = new();
+    private PasswordChange passwordChange = new();
+    private bool isLoading = true;
+    private bool isSaving = false;
+    private bool isChangingPassword = false;
+    private string message = string.Empty;
+    private string passwordMessage = string.Empty;
+    private bool isSuccess = false;
+    private bool isPasswordSuccess = false;
+    
+    // Avatar upload
+    private bool IsAvatarModalOpen = false;
+    private IBrowserFile? selectedFile;
+    private string avatarPreview = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        PageTitleService.Title = "Trang cá nhân";
+        await LoadCurrentUser();
+    }
+
+    private async Task LoadCurrentUser()
+    {
+        try
+        {
+            // Thử load từ UserService trước
+            currentUser = await userService.GetUserProfileAsync();
+            
+            // Nếu không load được, thử từ AuthService
+            if (currentUser == null)
+            {
+                currentUser = await authService.GetCurrentUserAsync();
+            }
+            
+            if (currentUser == null)
+            {
+                navigationManager.NavigateTo("/login");
+                return;
+            }
+
+            // Convert relative avatar URL to full URL if needed
+            if (!string.IsNullOrEmpty(currentUser.AvatarUrl))
+            {
+                Console.WriteLine($"Profile original avatar URL: {currentUser.AvatarUrl}");
+                if (currentUser.AvatarUrl.StartsWith("/"))
+                {
+                    currentUser.AvatarUrl = $"http://localhost:5000{currentUser.AvatarUrl}";
+                    Console.WriteLine($"Profile converted avatar URL: {currentUser.AvatarUrl}");
+                }
+            }
+
+            // Load user info for editing
+            userInfo = new UserInfo
+            {
+                FullName = currentUser.FullName,
+                Email = currentUser.Email,
+                DateOfBirth = currentUser.DateOfBirth,
+                Gender = currentUser.Gender
+            };
+            
+            Console.WriteLine($"Loaded user info: FullName={userInfo.FullName}, Email={userInfo.Email}, DateOfBirth={userInfo.DateOfBirth}, Gender={userInfo.Gender}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading user: {ex.Message}");
+            navigationManager.NavigateTo("/login");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void SetActiveTab(string tab)
+    {
+        activeTab = tab;
+        message = string.Empty;
+        passwordMessage = string.Empty;
+    }
+
+    private async Task SaveProfile()
+    {
+        // Manual validation
+        if (string.IsNullOrWhiteSpace(userInfo.FullName))
+        {
+            message = "Họ và tên không được để trống!";
+            isSuccess = false;
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(userInfo.Email) || !userInfo.Email.Contains("@"))
+        {
+            message = "Email không hợp lệ!";
+            isSuccess = false;
+            return;
+        }
+
+        isSaving = true;
+        message = string.Empty;
+
+        try
+        {
+            Console.WriteLine("SaveProfile method called - starting update");
+            Console.WriteLine($"Sending update request: FullName={userInfo.FullName}, Email={userInfo.Email}, DateOfBirth={userInfo.DateOfBirth}, Gender='{userInfo.Gender}'");
+            Console.WriteLine($"Gender type: {userInfo.Gender?.GetType()}, IsNull: {userInfo.Gender == null}, IsEmpty: {string.IsNullOrEmpty(userInfo.Gender)}");
+            
+            var serviceUserInfo = new frontend.Services.UserInfo
+            {
+                FullName = userInfo.FullName,
+                Email = userInfo.Email,
+                DateOfBirth = userInfo.DateOfBirth,
+                Gender = userInfo.Gender
+            };
+            Console.WriteLine($"Service UserInfo: FullName={serviceUserInfo.FullName}, Email={serviceUserInfo.Email}, DateOfBirth={serviceUserInfo.DateOfBirth}, Gender='{serviceUserInfo.Gender}'");
+            var result = await userService.UpdateProfileAsync(serviceUserInfo);
+            Console.WriteLine($"Update result: {result}");
+            
+            if (result)
+            {
+                message = "Cập nhật thông tin thành công!";
+                isSuccess = true;
+                
+                // Update current user info locally after successful database update
+                if (currentUser != null)
+                {
+                    Console.WriteLine($"Before local update: FullName={currentUser.FullName}, Email={currentUser.Email}, DateOfBirth={currentUser.DateOfBirth}, Gender={currentUser.Gender}");
+                    
+                    currentUser.FullName = userInfo.FullName;
+                    currentUser.Email = userInfo.Email;
+                    currentUser.DateOfBirth = userInfo.DateOfBirth;
+                    currentUser.Gender = userInfo.Gender;
+                    
+                    Console.WriteLine($"After local update: FullName={currentUser.FullName}, Email={currentUser.Email}, DateOfBirth={currentUser.DateOfBirth}, Gender={currentUser.Gender}");
+                }
+                
+                // Update local storage
+                await authService.UpdateLocalUserInfo(currentUser);
+                Console.WriteLine("Local storage updated");
+                
+                // Reload from server to confirm database update
+                await LoadCurrentUser();
+                Console.WriteLine("Reloaded from server to confirm database update");
+            }
+            else
+            {
+                message = "Cập nhật thất bại! Vui lòng thử lại.";
+                isSuccess = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            message = $"Lỗi: {ex.Message}";
+            isSuccess = false;
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task ChangePassword()
+    {
+        // Manual validation
+        if (string.IsNullOrWhiteSpace(passwordChange.CurrentPassword))
+        {
+            passwordMessage = "Mật khẩu hiện tại không được để trống!";
+            isPasswordSuccess = false;
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(passwordChange.NewPassword))
+        {
+            passwordMessage = "Mật khẩu mới không được để trống!";
+            isPasswordSuccess = false;
+            return;
+        }
+
+        if (passwordChange.NewPassword.Length < 6)
+        {
+            passwordMessage = "Mật khẩu mới phải có ít nhất 6 ký tự!";
+            isPasswordSuccess = false;
+            return;
+        }
+
+        if (passwordChange.NewPassword != passwordChange.ConfirmPassword)
+        {
+            passwordMessage = "Mật khẩu mới và xác nhận không khớp!";
+            isPasswordSuccess = false;
+            return;
+        }
+
+        isChangingPassword = true;
+        passwordMessage = string.Empty;
+
+        try
+        {
+            Console.WriteLine($"Profile ChangePassword: CurrentPassword={!string.IsNullOrEmpty(passwordChange.CurrentPassword)}, NewPassword={!string.IsNullOrEmpty(passwordChange.NewPassword)}, ConfirmPassword={!string.IsNullOrEmpty(passwordChange.ConfirmPassword)}");
+            
+            var result = await userService.ChangePasswordAsync(passwordChange);
+            Console.WriteLine($"Profile ChangePassword result: {result}");
+            
+            if (result)
+            {
+                passwordMessage = "Đổi mật khẩu thành công!";
+                isPasswordSuccess = true;
+                passwordChange = new(); // Reset form
+                Console.WriteLine("Password changed successfully, form reset");
+            }
+            else
+            {
+                passwordMessage = "Mật khẩu hiện tại không đúng!";
+                isPasswordSuccess = false;
+                Console.WriteLine("Password change failed");
+            }
+        }
+        catch (Exception ex)
+        {
+            passwordMessage = $"Lỗi: {ex.Message}";
+            isPasswordSuccess = false;
+        }
+        finally
+        {
+            isChangingPassword = false;
+        }
+    }
+
+    private void ResetForm()
+    {
+        if (currentUser != null)
+        {
+            userInfo = new UserInfo
+            {
+                FullName = currentUser.FullName,
+                Email = currentUser.Email,
+                DateOfBirth = currentUser.DateOfBirth,
+                Gender = currentUser.Gender
+            };
+        }
+        message = string.Empty;
+        Console.WriteLine($"Reset form: FullName={userInfo.FullName}, Email={userInfo.Email}, DateOfBirth={userInfo.DateOfBirth}, Gender={userInfo.Gender}");
+    }
+
+    private void GoBack()
+    {
+        navigationManager.NavigateTo("/dashboard");
+    }
+
+    private void GoToDashboard()
+    {
+        navigationManager.NavigateTo("/dashboard");
+    }
+
+    private void OpenAvatarModal()
+    {
+        IsAvatarModalOpen = true;
+        selectedFile = null;
+        avatarPreview = string.Empty;
+    }
+
+    private Task OnAvatarVisibleChanged(bool visible)
+    {
+        IsAvatarModalOpen = visible;
+        return Task.CompletedTask;
+    }
+
+    private Task CloseAvatarModal()
+    {
+        return avatarModalRef.Hide();
+    }
+
+    private void OnFileSelected(InputFileChangeEventArgs e)
+    {
+        Console.WriteLine("OnFileSelected called!");
+        var files = e.GetMultipleFiles();
+        Console.WriteLine($"Files count: {files?.Count ?? 0}");
+        
+        if (files != null && files.Count > 0)
+        {
+            selectedFile = files[0];
+            Console.WriteLine($"File selected: {selectedFile.Name}, Size: {selectedFile.Size} bytes");
+            Console.WriteLine($"selectedFile is now: {selectedFile != null}");
+            StateHasChanged();
+        }
+        else
+        {
+            Console.WriteLine("No files selected or files is null");
+        }
+    }
+
+    private async Task<bool> UpdateAvatarInDatabase(string avatarUrl)
+    {
+        try
+        {
+            var token = await authService.GetCurrentUserAsync();
+            if (token?.AccessToken == null) return false;
+
+            using var httpClient = new HttpClient();
+            httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token.AccessToken);
+            
+            var updateData = new { AvatarUrl = avatarUrl };
+            var json = System.Text.Json.JsonSerializer.Serialize(updateData);
+            var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+            
+            var response = await httpClient.PutAsync("http://localhost:5000/api/users/avatar", content);
+            Console.WriteLine($"Database update response: {response.StatusCode}");
+            
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Database update error: {ex.Message}");
+            return false;
+        }
+    }
+
+    private async Task<bool> UploadAvatarToServer(IBrowserFile file)
+    {
+        try
+        {
+            Console.WriteLine("Starting upload process...");
+            
+            using var content = new MultipartFormDataContent();
+            Console.WriteLine("Created MultipartFormDataContent");
+            
+            using var fileContent = new StreamContent(file.OpenReadStream(5 * 1024 * 1024)); // 5MB max
+            Console.WriteLine("Created StreamContent");
+            
+            fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+            Console.WriteLine($"Set content type: {file.ContentType}");
+            
+            content.Add(fileContent, "file", file.Name);
+            Console.WriteLine($"Added file to content: {file.Name}");
+
+            var token = await authService.GetCurrentUserAsync();
+            Console.WriteLine($"Got token: {token?.AccessToken != null}");
+            
+            if (token?.AccessToken == null) 
+            {
+                Console.WriteLine("No token available");
+                return false;
+            }
+
+            using var httpClient = new HttpClient();
+            httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token.AccessToken);
+            Console.WriteLine("Set authorization header");
+            
+            Console.WriteLine("Sending request to server...");
+            var response = await httpClient.PostAsync("http://localhost:5000/api/upload/avatar", content);
+            Console.WriteLine($"Response received: {response.StatusCode}");
+            
+            if (response.IsSuccessStatusCode)
+            {
+                var responseContent = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Raw response: {responseContent}");
+                
+                // Parse JSON response to get URL
+                var responseObj = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(responseContent);
+                var avatarUrl = responseObj.GetProperty("url").GetString();
+                
+                // Convert relative URL to full backend URL
+                if (avatarUrl != null && avatarUrl.StartsWith("/"))
+                {
+                    avatarUrl = $"http://localhost:5000{avatarUrl}";
+                }
+                Console.WriteLine($"Parsed Avatar URL: {avatarUrl}");
+                
+                // Update database via API (save full URL)
+                var updateResult = await UpdateAvatarInDatabase(avatarUrl ?? "");
+                if (updateResult)
+                {
+                    Console.WriteLine("Avatar URL updated in database");
+                }
+                else
+                {
+                    Console.WriteLine("Failed to update avatar URL in database");
+                }
+                
+                // Update local user info
+                if (currentUser != null)
+                {
+                    currentUser.AvatarUrl = avatarUrl;
+                    await authService.UpdateLocalUserInfo(currentUser);
+                    Console.WriteLine("Updated local user info");
+                }
+                
+                Console.WriteLine($"Avatar uploaded successfully: {avatarUrl}");
+                return true;
+            }
+            
+            var errorContent = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"Upload failed: {response.StatusCode} - {errorContent}");
+            return false;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Upload error: {ex.Message}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
+            return false;
+        }
+    }
+
+    private async Task UploadAvatar()
+    {
+        if (selectedFile == null) 
+        {
+            Console.WriteLine("No file selected for upload");
+            return;
+        }
+
+        try
+        {
+            Console.WriteLine($"Uploading avatar: {selectedFile.Name}");
+            
+            var result = await UploadAvatarToServer(selectedFile);
+            
+            if (result)
+            {
+                message = "Cập nhật ảnh đại diện thành công!";
+                isSuccess = true;
+                await CloseAvatarModal();
+                await LoadCurrentUser(); // Reload user info
+            }
+            else
+            {
+                message = "Cập nhật ảnh thất bại!";
+                isSuccess = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            message = $"Lỗi: {ex.Message}";
+            isSuccess = false;
+        }
+    }
+
+    public class UserInfo
+    {
+        public string FullName { get; set; } = string.Empty;
+        public string Username { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Role { get; set; } = string.Empty;
+        public string? AvatarUrl { get; set; }
+        public DateTime? DateOfBirth { get; set; }
+        public string? Gender { get; set; }
+    }
+
+    public class PasswordChange
+    {
+        public string CurrentPassword { get; set; } = string.Empty;
+        public string NewPassword { get; set; } = string.Empty;
+        public string ConfirmPassword { get; set; } = string.Empty;
+    }
+}
+
+
+

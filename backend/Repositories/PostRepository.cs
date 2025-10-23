@@ -33,7 +33,31 @@ public class PostRepository : IPostRepository
 	public Task<Post?> GetByIdAsync(int id) =>
 		_db.Posts.FirstOrDefaultAsync(p => p.PostId == id);
 
+	public async Task<IEnumerable<Post>> GetAllAsync()
+	{
+		return await _db.Posts
+			.Include(p => p.User)
+			.OrderByDescending(p => p.CreatedAt)
+			.ToListAsync();
+	}
+
 	public async Task AddAsync(Post post) => await _db.Posts.AddAsync(post);
+
+	public async Task UpdateAsync(Post post)
+	{
+		_db.Posts.Update(post);
+		await _db.SaveChangesAsync();
+	}
+
+	public async Task DeleteAsync(int id)
+	{
+		var post = await _db.Posts.FindAsync(id);
+		if (post != null)
+		{
+			_db.Posts.Remove(post);
+			await _db.SaveChangesAsync();
+		}
+	}
 
 	public Task SaveChangesAsync() => _db.SaveChangesAsync();
 }
