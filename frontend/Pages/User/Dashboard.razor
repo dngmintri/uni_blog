@@ -1,0 +1,618 @@
+@page "/dashboard"
+@using Blazorise
+@using Blazorise.Icons.FontAwesome
+@using frontend.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@inject IAuthService authService
+@inject AuthenticationStateProvider authStateProvider
+@inject NavigationManager navigationManager
+@inject PageTitleService PageTitleService
+
+<link href="css/dashboard.css" rel="stylesheet" />
+
+@if (isLoading)
+{
+    <div class="d-flex justify-content-center align-items-center" style="height: 50vh;">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+}
+else
+{
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2>Dashboard</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                @if (!string.IsNullOrEmpty(currentUser?.AvatarUrl))
+                                {
+                                    <img src="@currentUser.AvatarUrl" style="width:40px;height:40px;border-radius:50%;cursor:pointer">
+                                }
+                                else
+                                {
+                                    <div class="d-flex align-items-center justify-content-center bg-light rounded-circle" style="width:40px;height:40px;cursor:pointer">
+                                        <Blazorise.Icons.FontAwesome.Icon Name="IconName.User" Size="IconSize.Small" Class="text-muted" />
+                                    </div>
+                                }
+                                <div class="ms-2 flex-grow-1">
+                                    <h6 class="mb-1">@(currentUser?.FullName ?? "User")</h6>
+                                    <InputText Placeholder="bạn đang nghĩ gì thế?" Class="w-100" @onfocus="OpenCreateModal" />
+                                </div>
+                            </div>
+                            <Button Color="Color.Primary" Size="Size.Small" Clicked="OpenCreateModal">Đăng bài</Button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-12">
+                <div class="post-container">
+                <div class="post-header d-flex align-items-start mb-3">
+                    <img src="images/siu.jpg" alt="User Avatar" class="rounded-circle me-3" style="width: 50px; height: 50px;" />
+                    <div class="flex-grow-1">
+                        <div class="d-flex align-items-center mb-1">
+                            <h6 class="mb-0 me-2">Nhà thơ Binz</h6>
+                        </div>
+                        <small class="text-muted">18 tháng 10 lúc 11:00</small>
+                    </div>
+                </div>
+
+                <div class="post-content mb-3">
+                    <p class="mb-2">Cục đồi ngẩn làm, yêu ai<br>thì yêu điệncuồng lên.</p>
+                    <p>Đúng ăn cá, ngả thiu<br>bàn bàn thì nhậu.</p>
+                </div>
+
+                <div class="post-media mb-3">
+                    @if (postImages.Count == 1)
+                    {
+                        <img src="@postImages[0]" alt="Full Image" class="full-image rounded cursor-pointer" style="width: 100%; height: auto; max-height: 300px; object-fit: cover;" @onclick="() => OpenImageModalByIndex(0)" />
+                    }
+                    else if (postImages.Count == 2)
+                    {
+                        <div class="d-flex gap-2 w-100">
+                            @for (int i = 0; i < postImages.Count; i++)
+                            {
+                                var imgIndex = i;
+                                <img src="@postImages[imgIndex]" alt="Image" class="two-image rounded cursor-pointer" style="flex: 1; height: auto; max-height: 250px; object-fit: cover;" @onclick="() => OpenImageModalByIndex(imgIndex)" />
+                            }
+                        </div>
+                    }
+                    else if (postImages.Count == 3)
+                    {
+                        <div class="d-flex flex-wrap gap-2 w-100">
+                            <img src="@postImages[0]" alt="Main Image" class="three-main-image rounded cursor-pointer" style="width: 65%; height: auto; max-height: 250px; object-fit: cover;" @onclick="() => OpenImageModalByIndex(0)" />
+                            <div class="d-flex flex-column gap-2" style="width: 33%;">
+                                @for (int i = 1; i < postImages.Count && i < 3; i++)
+                                {
+                                    var imgIndex = i;
+                                    <img src="@postImages[imgIndex]" alt="Side Image" class="three-side-image rounded cursor-pointer" style="flex: 1; height: auto; max-height: 120px; object-fit: cover;" @onclick="() => OpenImageModalByIndex(imgIndex)" />
+                                }
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="row g-2 w-100">
+                            @for (int i = 0; i < postImages.Count; i++)
+                            {
+                                var imgIndex = i;
+                                <div class="col-6">
+                                    <img src="@postImages[imgIndex]" alt="Grid Image" class="grid-image rounded cursor-pointer" style="width: 100%; height: auto; max-height: 150px; object-fit: cover;" @onclick="() => OpenImageModalByIndex(imgIndex)" />
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+
+                <div class="post-actions d-flex justify-content-start mb-3">
+                    <!-- Modern comment button -->
+                    <Button Color="Color.Secondary" Size="Size.Small" IconName="Icons.FontAwesome.Solid.Comment" Class="modern-comment-btn" Clicked="OpenPostModal">
+                        Bình luận
+                    </Button>
+                </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal tạo bài viết mới -->
+    <Modal @ref="createModalRef" Visible="@IsCreateModalOpen" VisibleChanged="OnCreateVisibleChanged">
+        <ModalContent Centered="true">
+            <ModalHeader>
+                <ModalTitle>Tạo bài viết mới</ModalTitle>
+                <CloseButton Clicked="CloseCreateModal" />
+            </ModalHeader>
+            <ModalBody>
+                <div class="mb-3">
+                    <label class="form-label">Nội dung</label>
+                    <TextEdit Placeholder="Hãy chia sẻ suy nghĩ của bạn..." Multiline="true" Rows="4" Class="w-100" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Đăng ảnh</label>
+                    <FileEdit Multiple="true" Accept=".jpg,.jpeg,.png,.gif" Class="w-100" />
+                    <small class="text-muted">Chọn ảnh để đính kèm (JPG, PNG, GIF)</small>
+                </div>
+            </ModalBody>
+            <ModalFooter>
+                <Button Color="Color.Secondary" Clicked="CloseCreateModal">Hủy</Button>
+                <Button Color="Color.Primary" Size="Size.Small" Clicked="PostArticle">Đăng bài</Button>
+            </ModalFooter>
+        </ModalContent>
+    </Modal>
+
+    <!-- Modal chi tiết bài viết và bình luận -->
+    <Modal @ref="postModalRef" Visible="@IsPostModalOpen" VisibleChanged="OnPostVisibleChanged" Size="ModalSize.Large">
+        <ModalContent Centered="true" Style="max-height: 80vh;">
+            <ModalHeader>
+                <ModalTitle>Bình luận bài viết</ModalTitle>
+                <CloseButton Clicked="ClosePostModal" />
+            </ModalHeader>
+            <ModalBody Style="display: flex; flex-direction: column; max-height: calc(80vh - 120px);">
+                <div style="flex: 1; overflow-y: auto;">
+                    <!-- Post details -->
+                    <div class="post-detail mb-4">
+                        <div class="post-header d-flex align-items-start mb-3">
+                            <img src="images/siu.jpg" alt="User Avatar" class="rounded-circle me-3" style="width: 50px; height: 50px;" />
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center mb-1">
+                                    <h6 class="mb-0 me-2">Nhà thơ Binz</h6>
+                                </div>
+                                <small class="text-muted">18 tháng 10 lúc 11:00</small>
+                            </div>
+                        </div>
+
+                        <div class="post-content mb-3">
+                            <p class="mb-2">Cục đồi ngẩn làm, yêu ai<br>thì yêu điệncuồng lên.</p>
+                            <p>Đúng ăn cá, ngả thiu<br>bàn bàn thì nhậu.</p>
+                        </div>
+
+                        <div class="post-media mb-3">
+                            @if (postImages.Count == 1)
+                            {
+                                <img src="@postImages[0]" alt="Full Image" class="full-image rounded cursor-pointer" style="width: 100%; height: auto; max-height: 500px; object-fit: cover;" @onclick="() => OpenImageModalByIndex(0)" />
+                            }
+                            else if (postImages.Count == 2)
+                            {
+                                <div class="d-flex gap-2 w-100">
+                                    @for (int i = 0; i < postImages.Count; i++)
+                                    {
+                                        var imgIndex = i;
+                                        <img src="@postImages[imgIndex]" alt="Image" class="two-image rounded cursor-pointer" style="flex: 1; height: auto; max-height: 400px; object-fit: cover;" @onclick="() => OpenImageModalByIndex(imgIndex)" />
+                                    }
+                                </div>
+                            }
+                            else if (postImages.Count == 3)
+                            {
+                                <div class="d-flex flex-wrap gap-2 w-100">
+                                    <img src="@postImages[0]" alt="Main Image" class="three-main-image rounded cursor-pointer" style="width: 65%; height: auto; max-height: 400px; object-fit: cover;" @onclick="() => OpenImageModalByIndex(0)" />
+                                    <div class="d-flex flex-column gap-2" style="width: 33%;">
+                                        @for (int i = 1; i < postImages.Count && i < 3; i++)
+                                        {
+                                            var imgIndex = i;
+                                            <img src="@postImages[imgIndex]" alt="Side Image" class="three-side-image rounded cursor-pointer" style="flex: 1; height: auto; max-height: 200px; object-fit: cover;" @onclick="() => OpenImageModalByIndex(imgIndex)" />
+                                        }
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="row g-2 w-100">
+                                    @for (int i = 0; i < postImages.Count; i++)
+                                    {
+                                        var imgIndex = i;
+                                        <div class="col-6">
+                                            <img src="@postImages[imgIndex]" alt="Grid Image" class="grid-image rounded cursor-pointer" style="width: 100%; height: auto; max-height: 250px; object-fit: cover;" @onclick="() => OpenImageModalByIndex(imgIndex)" />
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Existing comments (hardcoded samples) -->
+                    <div class="comments-section mb-3">
+                        <h6 class="mb-2">Bình luận (2)</h6>
+                        <div class="comment-item d-flex align-items-start mb-2">
+                            <img src="images/siu.jpg" alt="Commenter Avatar" class="rounded-circle me-2 mt-1" style="width: 30px; height: 30px;" />
+                            <div class="flex-grow-1">
+                                <small class="fw-bold">User1</small>
+                                <p class="mb-0 small">Comment text here... Hay quá!</p>
+                                <small class="text-muted">1 giờ trước</small>
+                            </div>
+                        </div>
+                        <div class="comment-item d-flex align-items-start mb-2">
+                            <img src="images/siu.jpg" alt="Commenter Avatar" class="rounded-circle me-2 mt-1" style="width: 30px; height: 30px;" />
+                            <div class="flex-grow-1">
+                                <small class="fw-bold">User2</small>
+                                <p class="mb-0 small">Thú vị thật sự!</p>
+                                <small class="text-muted">30 phút trước</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Input for new comment - fixed at bottom -->
+                <div style="flex-shrink: 0; padding: 15px; border-top: 1px solid #eee; background-color: #f8f9fa;">
+                    <div class="d-flex align-items-flex-end gap-2">
+                        <!-- Avatar -->
+                        @if (!string.IsNullOrEmpty(currentUser?.AvatarUrl))
+                        {
+                            <img src="@currentUser.AvatarUrl" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;" alt="Your Avatar" />
+                        }
+                        else
+                        {
+                            <div class="d-flex align-items-center justify-content-center bg-light rounded-circle" style="width: 32px; height: 32px; flex-shrink: 0;">
+                                <Blazorise.Icons.FontAwesome.Icon Name="IconName.User" Size="IconSize.Small" Class="text-muted" />
+                            </div>
+                        }
+
+                        <!-- Input và Button -->
+                        <div class="d-flex gap-2 w-100" style="align-items: flex-end;">
+                            <div style="flex: 1; position: relative;">
+                                <TextEdit @bind-Value="newPostContent"
+                                         Placeholder="Viết bình luận..."
+                                         Class="comment-input w-100"
+                                         Multiline="true"
+                                         Rows="1"
+                                         Style="resize: none; border: 1px solid #ddd; border-radius: 20px; padding: 10px 15px; font-size: 14px; font-family: inherit;" />
+                            </div>
+                            <Button Color="Color.Primary"
+                                   Size="Size.Small"
+                                   Class="comment-submit-btn"
+                                   Style="border-radius: 50%; width: 36px; height: 36px; padding: 0; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <Blazorise.Icons.FontAwesome.Icon Name="IconName.PaperPlane" />
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            </ModalBody>
+        </ModalContent>
+    </Modal>
+
+    <!-- Modal xem ảnh lớn -->
+    <Modal @ref="imageModalRef" Visible="@IsImageModalOpen" VisibleChanged="OnImageVisibleChanged" Size="ModalSize.ExtraLarge" Centered="true">
+        <ModalContent Style="background-color: rgba(0,0,0,0.95); border: none; max-width: 95vw; max-height: 95vh; position: relative;">
+            <ModalBody Style="display: flex; justify-content: center; align-items: center; padding: 0; height: 90vh; position: relative;">
+                @if (!string.IsNullOrEmpty(selectedImageUrl))
+                {
+                    <div style="position: relative; display: flex; justify-content: center; align-items: center; width: 100%; height: 100%;">
+                        <img src="@selectedImageUrl" alt="Full Image" style="max-width: 90%; max-height: 90%; object-fit: contain; cursor: pointer;" @onclick="CloseImageModal" />
+
+                        <!-- Nút đóng X -->
+                        <div style="position: absolute; top: 20px; right: 20px; z-index: 1000; cursor: pointer;" @onclick="CloseImageModal">
+                            <div style="width: 40px; height: 40px; background-color: rgba(255,255,255,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; color: white; font-weight: bold; transition: background-color 0.3s ease;" class="close-icon-hover">
+                                ✕
+                            </div>
+                        </div>
+
+                        <!-- Nút chuyển ảnh trước -->
+                        <div style="position: absolute; left: 20px; top: 50%; transform: translateY(-50%); z-index: 1000; cursor: pointer;" @onclick="PreviousImage">
+                            <div style="width: 40px; height: 40px; background-color: rgba(255,255,255,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; color: white; transition: background-color 0.3s ease;" class="nav-icon-hover">
+                                ‹
+                            </div>
+                        </div>
+
+                        <!-- Nút chuyển ảnh sau -->
+                        <div style="position: absolute; right: 20px; top: 50%; transform: translateY(-50%); z-index: 1000; cursor: pointer;" @onclick="NextImage">
+                            <div style="width: 40px; height: 40px; background-color: rgba(255,255,255,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; color: white; transition: background-color 0.3s ease;" class="nav-icon-hover">
+                                ›
+                            </div>
+                        </div>
+
+                        <!-- Hiển thị số thứ tự ảnh -->
+                        <div style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; background-color: rgba(0,0,0,0.5); color: white; padding: 8px 16px; border-radius: 20px; font-size: 14px;">
+                            @(currentImageIndex + 1) / @postImages.Count
+                        </div>
+                    </div>
+                }
+            </ModalBody>
+        </ModalContent>
+    </Modal>
+}
+
+<style>
+    .post-container {
+        background: #fff;
+        border-radius: 12px;
+        padding: 1rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    .post-content p {
+        line-height: 1.4;
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .comment-item {
+        background: #f8f9fa;
+        padding: 0.5rem;
+        border-radius: 8px;
+    }
+
+    .post-detail {
+        border-bottom: 1px solid #eee;
+        padding-bottom: 1rem;
+    }
+
+    .two-image {
+        border: 1px solid #eee;
+    }
+
+    .three-main-image {
+        border: 1px solid #eee;
+    }
+
+    .three-side-image {
+        border: 1px solid #eee;
+    }
+
+    .grid-image {
+        border: 1px solid #eee;
+    }
+
+    .full-image {
+        border: 1px solid #eee;
+    }
+
+    .cursor-pointer {
+        cursor: pointer;
+    }
+
+    /* Modern comment button styles */
+    .modern-comment-btn {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%) !important;
+        border: 1px solid #0056b3 !important;
+        border-radius: 25px !important;
+        padding: 0.5rem 1rem !important;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        box-shadow: 0 2px 4px rgba(0,123,255,0.25);
+        color: white !important;
+    }
+
+    .modern-comment-btn:hover {
+        background: linear-gradient(135deg, #0056b3 0%, #004085 100%) !important;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,123,255,0.3);
+        border-color: #004085 !important;
+        color: white !important;
+    }
+
+    .modern-comment-btn:active {
+        transform: translateY(0);
+        box-shadow: 0 1px 2px rgba(0,123,255,0.25);
+        color: white !important;
+    }
+
+    .modern-comment-btn .btn-icon {
+        color: white !important;
+        transition: color 0.3s ease;
+    }
+
+    .modern-comment-btn:hover .btn-icon {
+        color: white !important;
+    }
+
+    .image-close-btn {
+        color: white !important;
+        font-size: 1.2rem;
+        transition: background-color 0.3s ease;
+    }
+
+    .image-close-btn:hover {
+        background-color: rgba(0,0,0,0.7) !important;
+    }
+
+    .close-icon-hover:hover {
+        background-color: rgba(255,255,255,0.5) !important;
+    }
+
+    .nav-icon-hover:hover {
+        background-color: rgba(255,255,255,0.5) !important;
+    }
+
+    .comment-input {
+        transition: all 0.3s ease !important;
+        background-color: white !important;
+    }
+
+    .comment-input:focus {
+        border-color: #007bff !important;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
+        background-color: white !important;
+    }
+
+    .comment-submit-btn {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%) !important;
+        border: none !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 2px 4px rgba(0, 123, 255, 0.25) !important;
+    }
+
+    .comment-submit-btn:hover {
+        background: linear-gradient(135deg, #0056b3 0%, #004085 100%) !important;
+        transform: scale(1.05);
+        box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3) !important;
+    }
+
+    .comment-submit-btn:active {
+        transform: scale(0.95);
+    }
+</style>
+
+@code {
+    private Modal createModalRef { get; set; } = default!;
+    private Modal postModalRef { get; set; } = default!;
+    private Modal imageModalRef { get; set; } = default!;
+    private bool IsCreateModalOpen { get; set; } = false;
+    private bool IsPostModalOpen { get; set; } = false;
+    private bool IsImageModalOpen { get; set; } = false;
+    private string newPostContent { get; set; } = "";
+    private string selectedImageUrl { get; set; } = "";
+    private int currentImageIndex { get; set; } = 0;
+    private List<string> postImages { get; set; } = new() { "images/siu.jpg", "images/siu.jpg", "images/siu.jpg" }; // Example with 3 images; adjust count for testing
+    private AuthResponse? currentUser;
+    <!-- private bool isLoading = true; -->
+    private bool isLoading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        PageTitleService.Title = "Dashboard";
+        <!-- await LoadCurrentUser(); -->
+    }
+
+    private async Task LoadCurrentUser()
+    {
+        try
+        {
+            currentUser = await authService.GetCurrentUserAsync();
+            if (currentUser == null)
+            {
+                // Nếu không có thông tin user, redirect về login
+                navigationManager.NavigateTo("/login");
+                return;
+            }
+
+            // Convert relative avatar URL to full URL if needed
+            if (!string.IsNullOrEmpty(currentUser.AvatarUrl))
+            {
+                Console.WriteLine($"Dashboard original avatar URL: {currentUser.AvatarUrl}");
+                if (currentUser.AvatarUrl.StartsWith("/"))
+                {
+                    currentUser.AvatarUrl = $"http://localhost:5000{currentUser.AvatarUrl}";
+                    Console.WriteLine($"Dashboard converted avatar URL: {currentUser.AvatarUrl}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading user: {ex.Message}");
+            navigationManager.NavigateTo("/login");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+
+    private Task OpenCreateModal()
+    {
+        IsCreateModalOpen = true;
+        return Task.CompletedTask;
+    }
+
+    private Task OnCreateVisibleChanged(bool visible)
+    {
+        IsCreateModalOpen = visible;
+        return Task.CompletedTask;
+    }
+
+    private Task CloseCreateModal()
+    {
+        return createModalRef.Hide();
+    }
+
+    private Task PostArticle()
+    {
+        // TODO: Xử lý đăng bài sau
+        return CloseCreateModal();
+    }
+
+    private Task OpenPostModal()
+    {
+        IsPostModalOpen = true;
+        return Task.CompletedTask;
+    }
+
+    private Task OnPostVisibleChanged(bool visible)
+    {
+        IsPostModalOpen = visible;
+        return Task.CompletedTask;
+    }
+
+    private Task ClosePostModal()
+    {
+        return postModalRef.Hide();
+    }
+
+    private async Task OpenImageModalByIndex(int index)
+    {
+        Console.WriteLine($"OpenImageModalByIndex called with index: {index}");
+        if (index < 0 || index >= postImages.Count) return;
+
+        currentImageIndex = index;
+        selectedImageUrl = postImages[index];
+        IsImageModalOpen = true;
+        Console.WriteLine($"IsImageModalOpen: {IsImageModalOpen}, currentImageIndex: {currentImageIndex}, selectedImageUrl: {selectedImageUrl}");
+        StateHasChanged();
+
+        // Chờ một chút rồi mở modal
+        await Task.Delay(100);
+        if (imageModalRef != null)
+        {
+            await imageModalRef.Show();
+        }
+    }
+
+    private Task OnImageVisibleChanged(bool visible)
+    {
+        IsImageModalOpen = visible;
+        if (!visible)
+        {
+            selectedImageUrl = "";
+            currentImageIndex = 0;
+            StateHasChanged();
+        }
+        return Task.CompletedTask;
+    }
+
+    private Task CloseImageModal()
+    {
+        IsImageModalOpen = false;
+        selectedImageUrl = "";
+        currentImageIndex = 0;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private Task NextImage()
+    {
+        if (currentImageIndex < postImages.Count - 1)
+        {
+            currentImageIndex++;
+            selectedImageUrl = postImages[currentImageIndex];
+            StateHasChanged();
+        }
+        return Task.CompletedTask;
+    }
+
+    private Task PreviousImage()
+    {
+        if (currentImageIndex > 0)
+        {
+            currentImageIndex--;
+            selectedImageUrl = postImages[currentImageIndex];
+            StateHasChanged();
+        }
+        return Task.CompletedTask;
+    }
+}
