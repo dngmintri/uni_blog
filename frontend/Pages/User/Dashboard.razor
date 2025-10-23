@@ -470,13 +470,12 @@ else
     private int currentImageIndex { get; set; } = 0;
     private List<string> postImages { get; set; } = new() { "images/siu.jpg", "images/siu.jpg", "images/siu.jpg" }; // Example with 3 images; adjust count for testing
     private AuthResponse? currentUser;
-    <!-- private bool isLoading = true; -->
-    private bool isLoading = false;
+    private bool isLoading = true;
 
     protected override async Task OnInitializedAsync()
     {
         PageTitleService.Title = "Dashboard";
-        <!-- await LoadCurrentUser(); -->
+        await LoadCurrentUser();
     }
 
     private async Task LoadCurrentUser()
