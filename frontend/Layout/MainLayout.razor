@@ -1,4 +1,5 @@
 ﻿@inherits LayoutComponentBase
+@implements IDisposable
 @using Blazorise
 @using Blazorise.Icons.FontAwesome
 @using frontend.Services
@@ -6,6 +7,7 @@
 @inject PageTitleService PageTitleService
 @inject IAuthService authService
 @inject NavigationManager navigationManager
+@inject IUserUpdateService userUpdateService
 
 <div class="page">
     <!-- Header -->
@@ -74,6 +76,21 @@
     protected override async Task OnInitializedAsync()
     {
         await LoadCurrentUser();
+        
+        // Subscribe to user update events
+        userUpdateService.OnUserUpdated += OnUserUpdated;
+    }
+
+    public void Dispose()
+    {
+        // Unsubscribe from events to prevent memory leaks
+        userUpdateService.OnUserUpdated -= OnUserUpdated;
+    }
+
+    private void OnUserUpdated(AuthResponse updatedUser)
+    {
+        currentUser = updatedUser;
+        StateHasChanged(); // Trigger UI update
     }
 
     private async Task LoadCurrentUser()

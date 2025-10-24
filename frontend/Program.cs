@@ -37,6 +37,9 @@ builder.Services.AddScoped<IAdminService, AdminService>();
 // Đăng ký PageTitleService
 builder.Services.AddScoped<PageTitleService>();
 
+// Đăng ký UserUpdateService
+builder.Services.AddScoped<IUserUpdateService, UserUpdateService>();
+
 // Đăng ký Authorization
 builder.Services.AddAuthorizationCore();
 
