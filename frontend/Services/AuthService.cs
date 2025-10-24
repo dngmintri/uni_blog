@@ -112,6 +112,13 @@ public class AuthService : IAuthService
 
             var userInfo = JsonSerializer.Deserialize<AuthResponse>(userInfoJson, _jsonOptions);
             
+            // Đảm bảo token được lấy từ localStorage riêng biệt
+            var token = await _localStorage.GetItemAsync<string>("authToken");
+            if (!string.IsNullOrEmpty(token) && userInfo != null)
+            {
+                userInfo.AccessToken = token;
+            }
+            
             // Convert relative avatar URL to full URL if needed
             if (userInfo != null && !string.IsNullOrEmpty(userInfo.AvatarUrl))
             {
