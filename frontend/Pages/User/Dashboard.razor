@@ -7,6 +7,8 @@
 @inject AuthenticationStateProvider authStateProvider
 @inject NavigationManager navigationManager
 @inject PageTitleService PageTitleService
+@inject HttpClient Http
+@inject IPostService postService
 
 <link href="css/dashboard.css" rel="stylesheet" />
 
@@ -59,36 +61,43 @@ else
         
         <div class="row">
             <div class="col-12">
-                <div class="post-container">
-                <div class="post-header d-flex align-items-start mb-3">
-                    <img src="images/siu.jpg" alt="User Avatar" class="rounded-circle me-3" style="width: 50px; height: 50px;" />
-                    <div class="flex-grow-1">
-                        <div class="d-flex align-items-center mb-1">
-                            <h6 class="mb-0 me-2">Nhà thơ Binz</h6>
+                @foreach (var post in posts)
+                {
+                    <div class="post-container mb-4">
+                        <div class="post-header d-flex align-items-start mb-3">
+                            <img src="@(!string.IsNullOrEmpty(post.ImageUrl) ? post.ImageUrl : "images/siu.jpg")" 
+                                class="rounded-circle me-3" style="width: 50px; height: 50px;" />
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center mb-1">
+                                    <h6 class="mb-0 me-2">@post.AuthorName</h6>
+                                </div>
+                                <small class="text-muted">@post.CreatedAt.ToString("dd/MM/yyyy HH:mm")</small>
+                            </div>
                         </div>
-                        <small class="text-muted">18 tháng 10 lúc 11:00</small>
+
+                        <div class="post-content mb-3">
+                            @if (!string.IsNullOrEmpty(post.Title))
+                            {
+                                <h5 class="mb-2 fw-bold">@post.Title</h5>
+                            }
+                            <p>@post.Content</p>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(post.ImageUrl))
+                        {
+                            <div class="post-media mb-3">
+                                <img src="@post.ImageUrl" class="rounded cursor-pointer" style="width:100%; max-height:300px; object-fit:cover;"
+                                    @onclick="() => OpenImageModal(post.ImageUrl)" />
+                            </div>
+                        }
+
+                        <div class="post-actions d-flex justify-content-start mb-3">
+                            <Button Color="Color.Secondary" Size="Size.Small" IconName="Icons.FontAwesome.Solid.Comment" Clicked="() => OpenPostModal(post)">
+                                Bình luận
+                            </Button>
+                        </div>
                     </div>
-                </div>
-
-                <div class="post-content mb-3">
-                    <p class="mb-2">Cục đồi ngẩn làm, yêu ai<br>thì yêu điệncuồng lên.</p>
-                    <p>Đúng ăn cá, ngả thiu<br>bàn bàn thì nhậu.</p>
-                </div>
-
-                <div class="post-media mb-3">
-                    @if (postImages.Count > 0)
-                    {
-                        <img src="@postImages[0]" alt="Post Image" class="rounded cursor-pointer" style="width: 100%; height: auto; max-height: 300px; object-fit: cover;" @onclick="() => OpenImageModalByIndex(0)" />
-                    }
-                </div>
-
-                <div class="post-actions d-flex justify-content-start mb-3">
-                    <!-- Modern comment button -->
-                    <Button Color="Color.Secondary" Size="Size.Small" IconName="Icons.FontAwesome.Solid.Comment" Class="modern-comment-btn" Clicked="OpenPostModal">
-                        Bình luận
-                    </Button>
-                </div>
-                </div>
+                }
             </div>
         </div>
     </div>
@@ -130,26 +139,32 @@ else
                     <!-- Post details -->
                     <div class="post-detail mb-4">
                         <div class="post-header d-flex align-items-start mb-3">
-                            <img src="images/siu.jpg" alt="User Avatar" class="rounded-circle me-3" style="width: 50px; height: 50px;" />
+                            <img src="@(!string.IsNullOrEmpty(selectedPost?.ImageUrl) ? selectedPost.ImageUrl : "images/siu.jpg")" 
+                                class="rounded-circle me-3" style="width: 50px; height: 50px;" />
                             <div class="flex-grow-1">
                                 <div class="d-flex align-items-center mb-1">
-                                    <h6 class="mb-0 me-2">Nhà thơ Binz</h6>
+                                    <h6 class="mb-0 me-2">@(selectedPost?.AuthorName ?? "Unknown User")</h6>
                                 </div>
-                                <small class="text-muted">18 tháng 10 lúc 11:00</small>
+                                <small class="text-muted">@(selectedPost?.CreatedAt.ToString("dd/MM/yyyy HH:mm") ?? "Unknown Date")</small>
                             </div>
                         </div>
 
                         <div class="post-content mb-3">
-                            <p class="mb-2">Cục đồi ngẩn làm, yêu ai<br>thì yêu điệncuồng lên.</p>
-                            <p>Đúng ăn cá, ngả thiu<br>bàn bàn thì nhậu.</p>
+                            @if (!string.IsNullOrEmpty(selectedPost?.Title))
+                            {
+                                <h5 class="mb-2 fw-bold">@selectedPost.Title</h5>
+                            }
+                            <p>@(selectedPost?.Content ?? "")</p>
                         </div>
 
-                        <div class="post-media mb-3">
-                            @if (postImages.Count > 0)
-                            {
-                                <img src="@postImages[0]" alt="Post Image" class="rounded cursor-pointer" style="width: 100%; height: auto; max-height: 500px; object-fit: cover;" @onclick="() => OpenImageModalByIndex(0)" />
-                            }
-                        </div>
+                        @if (!string.IsNullOrEmpty(selectedPost?.ImageUrl) || postImages.Count > 0)
+                        {
+                            <div class="post-media mb-3">
+                                <img src="@(selectedPost?.ImageUrl ?? (postImages.Count > 0 ? postImages[0] : ""))" 
+                                     alt="Post Image" class="rounded cursor-pointer" style="width: 100%; height: auto; max-height: 500px; object-fit: cover;" 
+                                     @onclick="() => OpenImageModalByIndex(0)" />
+                            </div>
+                        }
                     </div>
 
                     <!-- Existing comments (hardcoded samples) -->
@@ -383,13 +398,36 @@ else
     private int currentImageIndex { get; set; } = 0;
     private List<string> postImages { get; set; } = new() { "images/siu.jpg", "images/siu.jpg", "images/siu.jpg" }; // Example with 3 images; adjust count for testing
     private AuthResponse? currentUser;
-    <!-- private bool isLoading = true; -->
-    private bool isLoading = false;
+    private bool isLoading = true;
+    private List<Post> posts = new();
+    private Post? selectedPost; // Thêm field để lưu post hiện tại cho modal
 
     protected override async Task OnInitializedAsync()
     {
         PageTitleService.Title = "Dashboard";
-        <!-- await LoadCurrentUser(); -->
+        await LoadCurrentUser();
+        posts = await postService.GetAllPostsAsync();
+        // Fix URL cho tất cả posts
+        foreach (var post in posts)
+        {
+            Console.WriteLine($"Raw Post: {post.Title}");
+            Console.WriteLine($"Raw Image: {post.ImageUrl}");
+            
+            // Nếu ImageUrl chỉ là filename (không có /uploads/posts/), rebuild
+            if (!string.IsNullOrEmpty(post.ImageUrl) && !post.ImageUrl.StartsWith("/uploads/"))
+            {
+                string fullRelativeUrl = $"/uploads/posts/{post.ImageUrl}";
+                post.ImageUrl = $"http://localhost:5000{fullRelativeUrl}";  // Thay localhost:5000 bằng base URL nếu cần
+            }
+            // Nếu đã có full relative (hiếm), chỉ prepend base nếu cần
+            else if (!string.IsNullOrEmpty(post.ImageUrl) && post.ImageUrl.StartsWith("/") && !post.ImageUrl.StartsWith("http"))
+            {
+                post.ImageUrl = $"http://localhost:5000{post.ImageUrl}";
+            }
+            
+            Console.WriteLine($"Fixed Image URL: {post.ImageUrl}");
+        }
+        isLoading = false;
     }
 
     private async Task LoadCurrentUser()
@@ -420,12 +458,7 @@ else
             Console.WriteLine($"Error loading user: {ex.Message}");
             navigationManager.NavigateTo("/login");
         }
-        finally
-        {
-            isLoading = false;
-        }
     }
-
 
     private Task OpenCreateModal()
     {
@@ -450,8 +483,9 @@ else
         return CloseCreateModal();
     }
 
-    private Task OpenPostModal()
+    private Task OpenPostModal(Post post)
     {
+        selectedPost = post;  // Lưu post để dùng trong modal
         IsPostModalOpen = true;
         return Task.CompletedTask;
     }
@@ -467,15 +501,13 @@ else
         return postModalRef.Hide();
     }
 
-    private async Task OpenImageModalByIndex(int index)
+    private async Task OpenImageModal(string imageUrl)
     {
-        Console.WriteLine($"OpenImageModalByIndex called with index: {index}");
-        if (index < 0 || index >= postImages.Count) return;
+        if (string.IsNullOrEmpty(imageUrl)) return;
 
-        currentImageIndex = index;
-        selectedImageUrl = postImages[index];
+        selectedImageUrl = imageUrl;
         IsImageModalOpen = true;
-        Console.WriteLine($"IsImageModalOpen: {IsImageModalOpen}, currentImageIndex: {currentImageIndex}, selectedImageUrl: {selectedImageUrl}");
+
         StateHasChanged();
 
         // Chờ một chút rồi mở modal
@@ -483,6 +515,22 @@ else
         if (imageModalRef != null)
         {
             await imageModalRef.Show();
+        }
+    }
+
+    private async Task OpenImageModalByIndex(int index)
+    {
+        if (index >= 0 && index < postImages.Count)
+        {
+            currentImageIndex = index;
+            selectedImageUrl = postImages[index];
+            IsImageModalOpen = true;
+            StateHasChanged();
+            await Task.Delay(100);  // Delay để modal render mượt
+            if (imageModalRef != null)
+            {
+                await imageModalRef.Show();
+            }
         }
     }
 

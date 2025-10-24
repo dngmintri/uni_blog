@@ -37,6 +37,10 @@ builder.Services.AddScoped<PageTitleService>();
 // Đăng ký Authorization
 builder.Services.AddAuthorizationCore();
 
+//Đăng ký PostService
+builder.Services.AddScoped<IPostService, PostService>();
+
+
 // Cấu hình Blazorise
 builder.Services
     .AddBlazorise(options =>
