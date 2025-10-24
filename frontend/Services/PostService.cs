@@ -1,6 +1,5 @@
 using System.Net.Http.Json;
 
-
 public class PostService : IPostService
 {
     private readonly HttpClient _http;

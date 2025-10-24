@@ -49,7 +49,7 @@ else
                                 }
                                 <div class="ms-2 flex-grow-1">
                                     <h6 class="mb-1">@(currentUser?.FullName ?? "User")</h6>
-                                    <InputText Placeholder="bạn đang nghĩ gì thế?" Class="w-100" @onfocus="OpenCreateModal" />
+                                    <InputText @bind-Value="newPostContent" Placeholder="Bạn đang nghĩ gì thế?" readonly Class="w-100" @onfocus="OpenCreateModal" />
                                 </div>
                             </div>
                             <Button Color="Color.Primary" Size="Size.Small" Clicked="OpenCreateModal">Đăng bài</Button>
