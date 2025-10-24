@@ -86,3 +86,4 @@ packages/
 # ReSharper / Code analyzers
 _ReSharper*/
 *.DotSettings.user
+/backend/wwwroot/uploads/avatars

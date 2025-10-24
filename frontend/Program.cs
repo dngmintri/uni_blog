@@ -22,6 +22,9 @@ builder.Services.AddBlazoredLocalStorage();
 builder.Services.AddScoped<AuthStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(provider => provider.GetRequiredService<AuthStateProvider>());
 
+// Đăng ký TokenManagerService
+builder.Services.AddScoped<ITokenManagerService, TokenManagerService>();
+
 // Đăng ký AuthService
 builder.Services.AddScoped<IAuthService, AuthService>();
 
