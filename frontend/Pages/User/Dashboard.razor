@@ -139,8 +139,14 @@ else
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Nội dung</label>
-                    <TextEdit @bind-Text="Content" Placeholder="Hãy chia sẻ suy nghĩ của bạn..." Multiline="true" Rows="4" Class="w-100" Style="white-space: pre-wrap; overflow-y: auto;"/>
+                    <textarea @bind="Content"
+                            placeholder="Hãy chia sẻ suy nghĩ của bạn..."
+                            rows="4"
+                            class="form-control w-100"
+                            style="white-space: pre-wrap; overflow-y: auto;">
+                    </textarea>
                 </div>
+
                 <div class="mb-3">
                     <label class="form-label">Đăng ảnh</label>
                     <FileEdit Multiple="false" Accept=".jpg,.jpeg,.png,.gif" Class="w-100" Changed="OnFileSelected"/>
