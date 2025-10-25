@@ -17,7 +17,7 @@ public class CommentService : BaseAuthenticatedService
         try
         {
             var response = await ExecuteAuthenticatedRequestAsync<List<Comment>>(() =>
-                _httpClient.GetAsync($"api/comments/post/{postId}"));
+                _httpClient.GetAsync($"api/posts/{postId}/comments"));
             return response ?? new List<Comment>();
         }
         catch (Exception ex)
@@ -35,7 +35,7 @@ public class CommentService : BaseAuthenticatedService
             var content = new StringContent(json, Encoding.UTF8, "application/json");
             
             var response = await ExecuteAuthenticatedRequestAsync<Comment>(() =>
-                _httpClient.PostAsync($"api/comments/post/{postId}", content));
+                _httpClient.PostAsync($"api/posts/{postId}/comments", content));
             return response;
         }
         catch (Exception ex)
