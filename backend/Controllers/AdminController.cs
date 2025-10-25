@@ -81,22 +81,6 @@ public class AdminController : ControllerBase
         }
     }
 
-    [HttpDelete("users/{userId}")]
-    public async Task<ActionResult> DeleteUser(int userId)
-    {
-        try
-        {
-            var user = await _userRepository.GetByIdAsync(userId);
-            if (user == null) return NotFound();
-
-            await _userRepository.DeleteAsync(userId);
-            return Ok();
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { message = $"Lỗi: {ex.Message}" });
-        }
-    }
 
     [HttpGet("posts")]
     public async Task<ActionResult> GetAllPosts()
