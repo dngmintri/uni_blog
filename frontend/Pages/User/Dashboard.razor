@@ -568,19 +568,8 @@ else
 
     private async Task SubmitComment()
     {
-        Console.WriteLine($"SubmitComment called - newCommentContent: '{newCommentContent}', selectedPost: {selectedPost?.PostId}");
-        
-        if (string.IsNullOrWhiteSpace(newCommentContent))
-        {
-            Console.WriteLine("Comment content is empty");
+        if (string.IsNullOrWhiteSpace(newCommentContent) || selectedPost == null)
             return;
-        }
-        
-        if (selectedPost == null)
-        {
-            Console.WriteLine("Selected post is null");
-            return;
-        }
 
         try
         {
@@ -589,19 +578,12 @@ else
                 Content = newCommentContent.Trim()
             };
 
-            Console.WriteLine($"Creating comment for post {selectedPost.PostId}: {request.Content}");
             var newComment = await commentService.CreateCommentAsync(selectedPost.PostId, request);
-            
             if (newComment != null)
             {
-                Console.WriteLine($"Comment created successfully: {newComment.CommentId}");
                 comments.Add(newComment);
                 newCommentContent = string.Empty;
                 StateHasChanged();
-            }
-            else
-            {
-                Console.WriteLine("Failed to create comment - response was null");
             }
         }
         catch (Exception ex)
