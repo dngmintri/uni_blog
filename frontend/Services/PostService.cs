@@ -3,9 +3,11 @@ using System.Net.Http.Json;
 public class PostService : IPostService
 {
     private readonly HttpClient _http;
-    public PostService(HttpClient http)
+    private readonly IUploadService _uploadService;
+    public PostService(HttpClient http,IUploadService uploadService)
     {
         _http = http;
+        _uploadService = uploadService;
     }
 
     public async Task<List<Post>> GetAllPostsAsync()
@@ -18,6 +20,19 @@ public class PostService : IPostService
         catch
         {
             return new List<Post>();
+        }
+    }
+
+    public async Task<bool> CreatePostAsync(PostCreateRequest post)
+    {
+        try
+        {
+            var response = await _http.PostAsJsonAsync("api/posts", post);
+            return response.IsSuccessStatusCode;
+        }
+        catch
+        {
+            return false;
         }
     }
 }
