@@ -1,5 +1,6 @@
 @page "/dashboard"
 @using Blazorise
+@using Microsoft.AspNetCore.Components.Forms
 @using Blazorise.Icons.FontAwesome
 @using frontend.Services
 @using Microsoft.AspNetCore.Components.Authorization
@@ -9,7 +10,8 @@
 @inject PageTitleService PageTitleService
 @inject HttpClient Http
 @inject IPostService postService
-
+@inject IUploadService uploadService
+@inject NavigationManager Navigation
 <link href="css/dashboard.css" rel="stylesheet" />
 
 @if (isLoading)
@@ -49,7 +51,7 @@ else
                                 }
                                 <div class="ms-2 flex-grow-1">
                                     <h6 class="mb-1">@(currentUser?.FullName ?? "User")</h6>
-                                    <InputText @bind-Value="newPostContent" Placeholder="Bạn đang nghĩ gì thế?" readonly Class="w-100" @onfocus="OpenCreateModal" />
+                                    <InputText @bind-Text="newPostContent" Placeholder="Bạn đang nghĩ gì thế?" readonly Class="w-100" @onfocus="OpenCreateModal" />
                                 </div>
                             </div>
                             <Button Color="Color.Primary" Size="Size.Small" Clicked="OpenCreateModal">Đăng bài</Button>
@@ -80,7 +82,7 @@ else
                             {
                                 <h5 class="mb-2 fw-bold">@post.Title</h5>
                             }
-                            <p>@post.Content</p>
+                            <div style="white-space: pre-line; line-height: 1.4; font-size: 1rem;">@post.Content</div>  <!-- Thay <p> bằng div này -->
                         </div>
 
                         @if (!string.IsNullOrEmpty(post.ImageUrl))
@@ -111,18 +113,22 @@ else
             </ModalHeader>
             <ModalBody>
                 <div class="mb-3">
+                    <label class="form-label">Tiêu đề</label>
+                    <TextEdit @bind-Text="Title" Placeholder="Tiêu đề bài viết" Class="w-100" />
+                </div>
+                <div class="mb-3">
                     <label class="form-label">Nội dung</label>
-                    <TextEdit Placeholder="Hãy chia sẻ suy nghĩ của bạn..." Multiline="true" Rows="4" Class="w-100" />
+                    <TextEdit @bind-Text="Content" Placeholder="Hãy chia sẻ suy nghĩ của bạn..." Multiline="true" Rows="4" Class="w-100" Style="white-space: pre-wrap; overflow-y: auto;"/>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Đăng ảnh</label>
-                    <FileEdit Multiple="false" Accept=".jpg,.jpeg,.png,.gif" Class="w-100" />
+                    <FileEdit Multiple="false" Accept=".jpg,.jpeg,.png,.gif" Class="w-100" Changed="OnFileSelected"/>
                     <small class="text-muted">Chọn 1 ảnh để đính kèm (JPG, PNG, GIF)</small>
                 </div>
             </ModalBody>
             <ModalFooter>
-                <Button Color="Color.Secondary" Clicked="CloseCreateModal">Hủy</Button>
-                <Button Color="Color.Primary" Size="Size.Small" Clicked="PostArticle">Đăng bài</Button>
+                <Button Color="Color.Secondary" Size="Size.Small" Clicked="CloseCreateModal">Hủy</Button>
+                <Button Color="Color.Primary" Size="Size.Small" Clicked="PostArticle" >Đăng bài</Button>
             </ModalFooter>
         </ModalContent>
     </Modal>
@@ -154,7 +160,7 @@ else
                             {
                                 <h5 class="mb-2 fw-bold">@selectedPost.Title</h5>
                             }
-                            <p>@(selectedPost?.Content ?? "")</p>
+                            <div style="white-space: pre-line; line-height: 1.4;">@(selectedPost?.Content ?? "")</div>  <!-- Thay <p> -->
                         </div>
 
                         @if (!string.IsNullOrEmpty(selectedPost?.ImageUrl) || postImages.Count > 0)
@@ -174,8 +180,7 @@ else
                             <img src="images/siu.jpg" alt="Commenter Avatar" class="rounded-circle me-2 mt-1" style="width: 30px; height: 30px;" />
                             <div class="flex-grow-1">
                                 <small class="fw-bold">User1</small>
-                                <p class="mb-0 small">Comment text here... Hay quá!</p>
-                                <small class="text-muted">1 giờ trước</small>
+                                <div class="mb-0 small" style="white-space: pre-line;">Comment text here... Hay quá!</div>                                <small class="text-muted">1 giờ trước</small>
                             </div>
                         </div>
                         <div class="comment-item d-flex align-items-start mb-2">
@@ -401,7 +406,9 @@ else
     private bool isLoading = true;
     private List<Post> posts = new();
     private Post? selectedPost; // Thêm field để lưu post hiện tại cho modal
-
+    private IFileEntry? ImageFile { get; set; }
+    private string Title { get; set; } = string.Empty;
+    private string Content { get; set; } = string.Empty;
     protected override async Task OnInitializedAsync()
     {
         PageTitleService.Title = "Dashboard";
@@ -424,7 +431,7 @@ else
             {
                 post.ImageUrl = $"http://localhost:5000{post.ImageUrl}";
             }
-            
+                
             Console.WriteLine($"Fixed Image URL: {post.ImageUrl}");
         }
         isLoading = false;
@@ -477,10 +484,52 @@ else
         return createModalRef.Hide();
     }
 
-    private Task PostArticle()
+    private async Task PostArticle()
     {
-        // TODO: Xử lý đăng bài sau
-        return CloseCreateModal();
+        string imageUrl = null;
+
+        // Upload ảnh nếu có chọn
+        if (ImageFile != null)
+        {
+            Console.WriteLine("Uploading image...");
+            imageUrl = await uploadService.UploadImageAsync(ImageFile);
+            Console.WriteLine($"Uploaded image URL: {imageUrl}");
+        }
+        Console.WriteLine($"Uploaded image URL: {imageUrl}");
+
+        var post = new PostCreateRequest
+        {
+            Title = Title,
+            Content = Content,
+            ImageUrl = imageUrl
+        };
+
+        var result = await postService.CreatePostAsync(post);
+
+        if (result)
+        {
+            Console.WriteLine("Đăng bài thành công!");
+            Title = "";  // Clear
+            Content = "";  // Clear
+            ImageFile = null;  // Clear file
+            
+            Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
+        }
+        else
+        {
+            // TODO: Show error toast/message
+            Console.WriteLine("Đăng bài thất bại!");
+        }
+
+        await CloseCreateModal();
+    }
+
+private string DebugText = "";
+    //hàm lấy ảnh lưu vào biến
+    private void OnFileSelected(FileChangedEventArgs e)
+    {
+        // Lấy file đầu tiên mà user chọn
+        ImageFile = e.Files.FirstOrDefault();
     }
 
     private Task OpenPostModal(Post post)
