@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using frontend.Services;
+using frontend.Models;
 
 public class PostService : BaseAuthenticatedService, IPostService
 {
@@ -20,6 +21,20 @@ public class PostService : BaseAuthenticatedService, IPostService
         catch
         {
             return new List<Post>();
+        }
+    }
+
+    public async Task<PagedResult<Post>> GetPagedPostsAsync(int page = 1, int pageSize = 10)
+    {
+        try
+        {
+            var response = await _httpClient.GetFromJsonAsync<PagedResult<Post>>($"api/posts?page={page}&pageSize={pageSize}");
+            return response ?? new PagedResult<Post>();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error getting paged posts: {ex.Message}");
+            return new PagedResult<Post>();
         }
     }
 
