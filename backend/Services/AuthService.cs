@@ -53,8 +53,10 @@ public class AuthService : IAuthService
 		Console.WriteLine($"User registered successfully: {user.Username}");
 
 		var (token, exp) = _jwt.CreateToken(user);
+		var refreshToken = _jwt.CreateRefreshToken(user);
 		return new AuthResponse { 
 			AccessToken = token, 
+			RefreshToken = refreshToken,
 			ExpiresAt = exp, 
 			Username = user.Username, 
 			Email = user.Email,
@@ -107,9 +109,11 @@ public class AuthService : IAuthService
 		await _users.SaveChangesAsync();
 
 		var (token, exp) = _jwt.CreateToken(user);
+		var refreshToken = _jwt.CreateRefreshToken(user);
 		Console.WriteLine($"Login successful for user: {user.Username}");
 		return new AuthResponse { 
 			AccessToken = token, 
+			RefreshToken = refreshToken,
 			ExpiresAt = exp, 
 			Username = user.Username, 
 			Email = user.Email,
@@ -119,5 +123,40 @@ public class AuthService : IAuthService
 			DateOfBirth = user.DateOfBirth,
 			Gender = user.Gender
 		};
+	}
+
+	// Thêm vào AuthService.cs
+	public async Task<AuthResponse?> RefreshTokenAsync(string refreshToken)
+	{
+		try
+		{
+			// Validate refresh token (có thể lưu trong DB hoặc cache)
+			var userId = _jwt.ValidateRefreshToken(refreshToken);
+			if (userId == null) return null;
+
+			var user = await _users.GetByIdAsync(userId.Value);
+			if (user == null) return null;
+
+			var (token, exp) = _jwt.CreateToken(user);
+			var newRefreshToken = _jwt.CreateRefreshToken(user);
+			return new AuthResponse 
+			{ 
+				AccessToken = token, 
+				RefreshToken = newRefreshToken,
+				ExpiresAt = exp, 
+				Username = user.Username, 
+				Email = user.Email,
+				FullName = user.FullName,
+				Role = user.Role.ToString(), 
+				AvatarUrl = user.AvatarUrl,
+				DateOfBirth = user.DateOfBirth,
+				Gender = user.Gender
+			};
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine($"RefreshToken error: {ex.Message}");
+			return null;
+		}
 	}
 }

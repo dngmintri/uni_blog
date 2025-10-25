@@ -8,6 +8,7 @@ public interface IAuthService
 {
     Task<AuthResponse?> RegisterAsync(RegisterRequest request);
     Task<AuthResponse?> LoginAsync(LoginRequest request);
+    Task<AuthResponse?> RefreshTokenAsync(string refreshToken);
     Task LogoutAsync();
     Task<AuthResponse?> GetCurrentUserAsync();
     Task UpdateLocalUserInfo(AuthResponse? userInfo);
@@ -75,6 +76,7 @@ public class AuthService : IAuthService
                 
                 var authResponse = JsonSerializer.Deserialize<AuthResponse>(responseContent, _jsonOptions);
                 Console.WriteLine($"AuthService: Deserialized response: {authResponse?.Username}");
+                Console.WriteLine($"AuthService: RefreshToken received: {authResponse?.RefreshToken?.Substring(0, 20)}...");
                 
                 if (authResponse != null)
                 {
@@ -130,16 +132,38 @@ public class AuthService : IAuthService
     {
         try
         {
-            // TODO: Implement với backend refresh endpoint
-            // Hiện tại chỉ logout user
-            Console.WriteLine("AuthService: Token refresh not implemented - logging out user");
-            await LogoutAsync();
+            var refreshToken = await _localStorage.GetItemAsync<string>("refreshToken");
+            if (string.IsNullOrEmpty(refreshToken))
+            {
+                Console.WriteLine("AuthService: No refresh token found");
+                return false;
+            }
+
+            var request = new { RefreshToken = refreshToken };
+            var json = JsonSerializer.Serialize(request, _jsonOptions);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.PostAsync("api/auth/refresh", content);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                var responseContent = await response.Content.ReadAsStringAsync();
+                var authResponse = JsonSerializer.Deserialize<AuthResponse>(responseContent, _jsonOptions);
+                
+                if (authResponse != null)
+                {
+                    await _authStateProvider.MarkUserAsAuthenticated(authResponse);
+                    Console.WriteLine("AuthService: Token refreshed successfully");
+                    return true;
+                }
+            }
+            
+            Console.WriteLine("AuthService: Token refresh failed");
             return false;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"AuthService: Error during token refresh: {ex.Message}");
-            await LogoutAsync();
+            Console.WriteLine($"AuthService: Token refresh error: {ex.Message}");
             return false;
         }
     }
@@ -202,6 +226,39 @@ public class AuthService : IAuthService
             }
         }
     }
+
+    public async Task<AuthResponse?> RefreshTokenAsync(string refreshToken)
+    {
+        try
+        {
+            var request = new { RefreshToken = refreshToken };
+            var json = JsonSerializer.Serialize(request, _jsonOptions);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.PostAsync("api/auth/refresh", content);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                var responseContent = await response.Content.ReadAsStringAsync();
+                var authResponse = JsonSerializer.Deserialize<AuthResponse>(responseContent, _jsonOptions);
+                
+                if (authResponse != null)
+                {
+                    await _authStateProvider.MarkUserAsAuthenticated(authResponse);
+                    Console.WriteLine("AuthService: Token refreshed successfully");
+                    return authResponse;
+                }
+            }
+            
+            Console.WriteLine("AuthService: Token refresh failed");
+            return null;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"AuthService: Token refresh error: {ex.Message}");
+            return null;
+        }
+    }
 }
 
 public class RegisterRequest
@@ -223,6 +280,7 @@ public class LoginRequest
 public class AuthResponse
 {
     public string AccessToken { get; set; } = string.Empty;
+    public string RefreshToken { get; set; } = string.Empty;
     public string Username { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string FullName { get; set; } = string.Empty;

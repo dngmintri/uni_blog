@@ -60,4 +60,13 @@ public class AuthController : ControllerBase
             return BadRequest($"Error: {ex.Message}");
         }
     }
+
+    [HttpPost("refresh")]
+    public async Task<ActionResult<AuthResponse>> Refresh([FromBody] RefreshTokenRequest req)
+    {
+        if (!ModelState.IsValid) return ValidationProblem(ModelState);
+        var res = await _auth.RefreshTokenAsync(req.RefreshToken);
+        if (res is null) return Unauthorized("Invalid refresh token");
+        return Ok(res);
+    }
 }
