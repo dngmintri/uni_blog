@@ -22,6 +22,9 @@ builder.Services.AddBlazoredLocalStorage();
 builder.Services.AddScoped<AuthStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(provider => provider.GetRequiredService<AuthStateProvider>());
 
+// Đăng ký TokenManagerService
+builder.Services.AddScoped<ITokenManagerService, TokenManagerService>();
+
 // Đăng ký AuthService
 builder.Services.AddScoped<IAuthService, AuthService>();
 
@@ -33,6 +36,9 @@ builder.Services.AddScoped<IAdminService, AdminService>();
 
 // Đăng ký PageTitleService
 builder.Services.AddScoped<PageTitleService>();
+
+// Đăng ký UserUpdateService
+builder.Services.AddScoped<IUserUpdateService, UserUpdateService>();
 
 // Đăng ký Authorization
 builder.Services.AddAuthorizationCore();

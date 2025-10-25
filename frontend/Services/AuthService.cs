@@ -11,6 +11,8 @@ public interface IAuthService
     Task LogoutAsync();
     Task<AuthResponse?> GetCurrentUserAsync();
     Task UpdateLocalUserInfo(AuthResponse? userInfo);
+    Task<bool> IsTokenExpiredAsync();
+    Task<bool> RefreshTokenAsync();
 }
 
 public class AuthService : IAuthService
@@ -102,6 +104,46 @@ public class AuthService : IAuthService
         await _authStateProvider.MarkUserAsLoggedOut();
     }
 
+    public async Task<bool> IsTokenExpiredAsync()
+    {
+        try
+        {
+            var userInfo = await GetCurrentUserAsync();
+            if (userInfo?.ExpiresAt == null)
+            {
+                Console.WriteLine("AuthService: No ExpiresAt found, considering token not expired");
+                return false;
+            }
+            
+            var isExpired = userInfo.ExpiresAt <= DateTime.UtcNow;
+            Console.WriteLine($"AuthService: Token expiration check - ExpiresAt: {userInfo.ExpiresAt}, Now: {DateTime.UtcNow}, Expired: {isExpired}");
+            return isExpired;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"AuthService: Error checking token expiration: {ex.Message}");
+            return true; // Nếu có lỗi, coi như token đã hết hạn
+        }
+    }
+
+    public async Task<bool> RefreshTokenAsync()
+    {
+        try
+        {
+            // TODO: Implement với backend refresh endpoint
+            // Hiện tại chỉ logout user
+            Console.WriteLine("AuthService: Token refresh not implemented - logging out user");
+            await LogoutAsync();
+            return false;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"AuthService: Error during token refresh: {ex.Message}");
+            await LogoutAsync();
+            return false;
+        }
+    }
+
     public async Task<AuthResponse?> GetCurrentUserAsync()
     {
         try
@@ -111,6 +153,13 @@ public class AuthService : IAuthService
                 return null;
 
             var userInfo = JsonSerializer.Deserialize<AuthResponse>(userInfoJson, _jsonOptions);
+            
+            // Đảm bảo token được lấy từ localStorage riêng biệt
+            var token = await _localStorage.GetItemAsync<string>("authToken");
+            if (!string.IsNullOrEmpty(token) && userInfo != null)
+            {
+                userInfo.AccessToken = token;
+            }
             
             // Convert relative avatar URL to full URL if needed
             if (userInfo != null && !string.IsNullOrEmpty(userInfo.AvatarUrl))
@@ -142,7 +191,15 @@ public class AuthService : IAuthService
                 Console.WriteLine($"AuthService converted avatar URL: {userInfo.AvatarUrl}");
             }
             
+            // Lưu userInfo và đảm bảo token được lưu riêng biệt
             await _localStorage.SetItemAsync("userInfo", JsonSerializer.Serialize(userInfo, _jsonOptions));
+            
+            // Đảm bảo AccessToken được lưu riêng biệt nếu có
+            if (!string.IsNullOrEmpty(userInfo.AccessToken))
+            {
+                await _localStorage.SetItemAsync("authToken", userInfo.AccessToken);
+                Console.WriteLine("AuthService: Token updated in localStorage");
+            }
         }
     }
 }

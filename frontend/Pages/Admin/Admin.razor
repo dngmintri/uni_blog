@@ -8,59 +8,88 @@
 @inject IAuthService authService
 @inject NavigationManager navigationManager
 @inject PageTitleService pageTitleService
-@attribute [Authorize(Roles = "Admin")]
 
 <PageTitle>Trang quản trị</PageTitle>
 
-<div class="admin-container">
-    <!-- Header -->
-    <div class="admin-header">
-        <div class="d-flex justify-content-between align-items-center">
-            <h1 class="admin-title">
-                <Blazorise.Icons.FontAwesome.Icon Name="IconName.User" class="me-2" />
-                Trang quản trị
-            </h1>
-            <div class="admin-actions">
-                <Button Color="Color.Secondary" @onclick="GoBack" class="me-2">
-                    <Blazorise.Icons.FontAwesome.Icon Name="IconName.ArrowLeft" class="me-1" />
-                    Quay lại
-                </Button>
-                <Button Color="Color.Danger" @onclick="Logout">
-                    <Blazorise.Icons.FontAwesome.Icon Name="IconName.Times" class="me-1" />
-                    Đăng xuất
-                </Button>
+@if (currentUser?.Role != "Admin")
+{
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="alert alert-danger text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-shield-alt fa-3x text-danger"></i>
+                    </div>
+                    <h4 class="alert-heading">🔒 Access Denied</h4>
+                    <p class="mb-3">You need admin privileges to access this page.</p>
+                    <hr>
+                    <div class="d-flex justify-content-center gap-2">
+                        <Button Color="Color.Primary" @onclick="GoHome">
+                            <Blazorise.Icons.FontAwesome.Icon Name="IconName.Home" class="me-1" />
+                            🏠 Go Home
+                        </Button>
+                        <Button Color="Color.Secondary" @onclick="GoToLogin">
+                            <Blazorise.Icons.FontAwesome.Icon Name="IconName.User" class="me-1" />
+                            🔑 Login
+                        </Button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-
-    <!-- Navigation Tabs -->
-    <div class="admin-nav">
-        <div class="nav-tabs">
-            <Button Color="@(activeTab == "users" ? Color.Primary : Color.Light)" 
-                    @onclick="@(() => SetActiveTab("users"))" 
-                    class="me-2">
-                <Blazorise.Icons.FontAwesome.Icon Name="IconName.Users" class="me-1" />
-                Quản lý người dùng
-            </Button>
-            <Button Color="@(activeTab == "posts" ? Color.Primary : Color.Light)" 
-                    @onclick="@(() => SetActiveTab("posts"))">
-                <Blazorise.Icons.FontAwesome.Icon Name="IconName.FileAlt" class="me-1" />
-                Quản lý bài viết
-            </Button>
+}
+else
+{
+    <div class="admin-container">
+        <!-- Header -->
+        <div class="admin-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="admin-title">
+                    <Blazorise.Icons.FontAwesome.Icon Name="IconName.User" class="me-2" />
+                    Trang quản trị
+                </h1>
+                <div class="admin-actions">
+                    <Button Color="Color.Secondary" @onclick="GoBack" class="me-2">
+                        <Blazorise.Icons.FontAwesome.Icon Name="IconName.ArrowLeft" class="me-1" />
+                        Quay lại
+                    </Button>
+                    <Button Color="Color.Danger" @onclick="Logout">
+                        <Blazorise.Icons.FontAwesome.Icon Name="IconName.Times" class="me-1" />
+                        Đăng xuất
+                    </Button>
+                </div>
+            </div>
         </div>
-        
-        <div class="tab-content">
-            @if (activeTab == "users")
-            {
-                <UserManagement />
-            }
-            else if (activeTab == "posts")
-            {
-                <PostManagement />
-            }
+
+        <!-- Navigation Tabs -->
+        <div class="admin-nav">
+            <div class="nav-tabs">
+                <Button Color="@(activeTab == "users" ? Color.Primary : Color.Light)" 
+                        @onclick="@(() => SetActiveTab("users"))" 
+                        class="me-2">
+                    <Blazorise.Icons.FontAwesome.Icon Name="IconName.Users" class="me-1" />
+                    Quản lý người dùng
+                </Button>
+                <Button Color="@(activeTab == "posts" ? Color.Primary : Color.Light)" 
+                        @onclick="@(() => SetActiveTab("posts"))">
+                    <Blazorise.Icons.FontAwesome.Icon Name="IconName.FileAlt" class="me-1" />
+                    Quản lý bài viết
+                </Button>
+            </div>
+            
+            <div class="tab-content">
+                @if (activeTab == "users")
+                {
+                    <UserManagement />
+                }
+                else if (activeTab == "posts")
+                {
+                    <PostManagement />
+                }
+            </div>
         </div>
     </div>
-</div>
+}
 
 <style>
     .admin-container {
@@ -110,9 +139,14 @@
 
 @code {
     private string activeTab = "users";
+    private AuthResponse? currentUser;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+        // Load current user info
+        currentUser = await authService.GetCurrentUserAsync();
+        
+        // Set page title
         pageTitleService.Title = "Trang quản trị";
     }
 
@@ -125,6 +159,16 @@
     private void GoBack()
     {
         navigationManager.NavigateTo("/");
+    }
+
+    private void GoHome()
+    {
+        navigationManager.NavigateTo("/");
+    }
+
+    private void GoToLogin()
+    {
+        navigationManager.NavigateTo("/login");
     }
 
     private async Task Logout()

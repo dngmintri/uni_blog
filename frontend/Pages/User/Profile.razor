@@ -11,9 +11,11 @@
 @using System.Text.Json
 @inject IAuthService authService
 @inject IUserService userService
+@inject ITokenManagerService tokenManager
 @inject AuthenticationStateProvider authStateProvider
 @inject NavigationManager navigationManager
 @inject PageTitleService PageTitleService
+@inject IUserUpdateService userUpdateService
 
 <link href="css/dashboard.css" rel="stylesheet" />
 
@@ -271,14 +273,8 @@ else
     {
         try
         {
-            // Thử load từ UserService trước
-            currentUser = await userService.GetUserProfileAsync();
-            
-            // Nếu không load được, thử từ AuthService
-            if (currentUser == null)
-            {
-                currentUser = await authService.GetCurrentUserAsync();
-            }
+            // Chỉ load từ localStorage, không gọi API
+            currentUser = await authService.GetCurrentUserAsync();
             
             if (currentUser == null)
             {
@@ -373,6 +369,17 @@ else
                 {
                     Console.WriteLine($"Before local update: FullName={currentUser.FullName}, Email={currentUser.Email}, DateOfBirth={currentUser.DateOfBirth}, Gender={currentUser.Gender}");
                     
+                    // Đảm bảo giữ lại AccessToken và ExpiresAt hiện tại
+                    var currentToken = await authService.GetCurrentUserAsync();
+                    if (currentToken?.AccessToken != null)
+                    {
+                        currentUser.AccessToken = currentToken.AccessToken;
+                    }
+                    if (currentToken?.ExpiresAt != null)
+                    {
+                        currentUser.ExpiresAt = currentToken.ExpiresAt;
+                    }
+                    
                     currentUser.FullName = userInfo.FullName;
                     currentUser.Email = userInfo.Email;
                     currentUser.DateOfBirth = userInfo.DateOfBirth;
@@ -388,6 +395,12 @@ else
                 // Reload from server to confirm database update
                 await LoadCurrentUser();
                 Console.WriteLine("Reloaded from server to confirm database update");
+                
+                // Notify MainLayout about user update
+                if (currentUser != null)
+                {
+                    userUpdateService.NotifyUserUpdated(currentUser);
+                }
             }
             else
             {
@@ -539,17 +552,20 @@ else
     {
         try
         {
-            var token = await authService.GetCurrentUserAsync();
-            if (token?.AccessToken == null) return false;
-
             using var httpClient = new HttpClient();
-            httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token.AccessToken);
+            httpClient.BaseAddress = new Uri("http://localhost:5000");
+            
+            if (!await tokenManager.EnsureTokenIsSetAsync(httpClient))
+            {
+                Console.WriteLine("No valid token available for database update");
+                return false;
+            }
             
             var updateData = new { AvatarUrl = avatarUrl };
             var json = System.Text.Json.JsonSerializer.Serialize(updateData);
             var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
             
-            var response = await httpClient.PutAsync("http://localhost:5000/api/users/avatar", content);
+            var response = await httpClient.PutAsync("api/users/avatar", content);
             Console.WriteLine($"Database update response: {response.StatusCode}");
             
             return response.IsSuccessStatusCode;
@@ -579,21 +595,19 @@ else
             content.Add(fileContent, "file", file.Name);
             Console.WriteLine($"Added file to content: {file.Name}");
 
-            var token = await authService.GetCurrentUserAsync();
-            Console.WriteLine($"Got token: {token?.AccessToken != null}");
+            using var httpClient = new HttpClient();
+            httpClient.BaseAddress = new Uri("http://localhost:5000");
             
-            if (token?.AccessToken == null) 
+            if (!await tokenManager.EnsureTokenIsSetAsync(httpClient))
             {
-                Console.WriteLine("No token available");
+                Console.WriteLine("No valid token available for upload");
                 return false;
             }
-
-            using var httpClient = new HttpClient();
-            httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token.AccessToken);
-            Console.WriteLine("Set authorization header");
+            
+            Console.WriteLine("Authorization header set via TokenManager");
             
             Console.WriteLine("Sending request to server...");
-            var response = await httpClient.PostAsync("http://localhost:5000/api/upload/avatar", content);
+            var response = await httpClient.PostAsync("api/upload/avatar", content);
             Console.WriteLine($"Response received: {response.StatusCode}");
             
             if (response.IsSuccessStatusCode)
@@ -626,9 +640,23 @@ else
                 // Update local user info
                 if (currentUser != null)
                 {
+                    // Đảm bảo giữ lại AccessToken và ExpiresAt hiện tại
+                    var currentToken = await authService.GetCurrentUserAsync();
+                    if (currentToken?.AccessToken != null)
+                    {
+                        currentUser.AccessToken = currentToken.AccessToken;
+                    }
+                    if (currentToken?.ExpiresAt != null)
+                    {
+                        currentUser.ExpiresAt = currentToken.ExpiresAt;
+                    }
+                    
                     currentUser.AvatarUrl = avatarUrl;
                     await authService.UpdateLocalUserInfo(currentUser);
                     Console.WriteLine("Updated local user info");
+                    
+                    // Notify MainLayout about user update
+                    userUpdateService.NotifyUserUpdated(currentUser);
                 }
                 
                 Console.WriteLine($"Avatar uploaded successfully: {avatarUrl}");

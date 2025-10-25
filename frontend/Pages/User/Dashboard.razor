@@ -49,7 +49,7 @@ else
                                 }
                                 <div class="ms-2 flex-grow-1">
                                     <h6 class="mb-1">@(currentUser?.FullName ?? "User")</h6>
-                                    <InputText Placeholder="bạn đang nghĩ gì thế?" Class="w-100" @onfocus="OpenCreateModal" />
+                                    <InputText @bind-Value="newPostContent" Placeholder="Bạn đang nghĩ gì thế?" readonly Class="w-100" @onfocus="OpenCreateModal" />
                                 </div>
                             </div>
                             <Button Color="Color.Primary" Size="Size.Small" Clicked="OpenCreateModal">Đăng bài</Button>
@@ -65,7 +65,7 @@ else
                 {
                     <div class="post-container mb-4">
                         <div class="post-header d-flex align-items-start mb-3">
-                            <img src="@(!string.IsNullOrEmpty(post.ImageUrl) ? post.ImageUrl : "images/siu.jpg")" 
+                            <img src="@(!string.IsNullOrEmpty(currentUser!.AvatarUrl) ? currentUser.AvatarUrl : "images/siu.jpg")" 
                                 class="rounded-circle me-3" style="width: 50px; height: 50px;" />
                             <div class="flex-grow-1">
                                 <div class="d-flex align-items-center mb-1">
@@ -139,7 +139,7 @@ else
                     <!-- Post details -->
                     <div class="post-detail mb-4">
                         <div class="post-header d-flex align-items-start mb-3">
-                            <img src="@(!string.IsNullOrEmpty(selectedPost?.ImageUrl) ? selectedPost.ImageUrl : "images/siu.jpg")" 
+                            <img src="@(!string.IsNullOrEmpty(currentUser?.AvatarUrl) ? currentUser.AvatarUrl : "images/siu.jpg")" 
                                 class="rounded-circle me-3" style="width: 50px; height: 50px;" />
                             <div class="flex-grow-1">
                                 <div class="d-flex align-items-center mb-1">

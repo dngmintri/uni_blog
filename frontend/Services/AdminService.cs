@@ -15,198 +15,72 @@ public interface IAdminService
     Task<AdminStats> GetAdminStatsAsync();
 }
 
-public class AdminService : IAdminService
+public class AdminService : BaseAuthenticatedService, IAdminService
 {
-    private readonly HttpClient _httpClient;
-    private readonly JsonSerializerOptions _jsonOptions;
-    private readonly ILocalStorageService _localStorage;
-
-    public AdminService(HttpClient httpClient, ILocalStorageService localStorage)
-    {
-        _httpClient = httpClient;
-        _localStorage = localStorage;
-        _jsonOptions = new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true
-        };
-    }
+    public AdminService(HttpClient httpClient, ITokenManagerService tokenManager) 
+        : base(httpClient, tokenManager) { }
 
     public async Task<List<AdminUserInfo>> GetAllUsersAsync()
     {
-        try
-        {
-            var token = await _localStorage.GetItemAsync<string>("authToken");
-            if (string.IsNullOrEmpty(token))
-                return new List<AdminUserInfo>();
-
-            _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-
-            var response = await _httpClient.GetAsync("api/admin/users");
-            if (response.IsSuccessStatusCode)
-            {
-                var content = await response.Content.ReadAsStringAsync();
-                return JsonSerializer.Deserialize<List<AdminUserInfo>>(content, _jsonOptions) ?? new List<AdminUserInfo>();
-            }
-
-            return new List<AdminUserInfo>();
-        }
-        catch
-        {
-            return new List<AdminUserInfo>();
-        }
+        var result = await ExecuteAuthenticatedRequestAsync<List<AdminUserInfo>>(() => 
+            _httpClient.GetAsync("api/admin/users"));
+        return result ?? new List<AdminUserInfo>();
     }
 
     public async Task<bool> UpdateUserAsync(int userId, AdminUserInfo userInfo)
     {
-        try
+        var updateRequest = new
         {
-            var token = await _localStorage.GetItemAsync<string>("authToken");
-            if (string.IsNullOrEmpty(token))
-                return false;
+            FullName = userInfo.FullName,
+            Email = userInfo.Email,
+            DateOfBirth = userInfo.DateOfBirth,
+            Gender = userInfo.Gender,
+            Role = userInfo.Role,
+            IsActive = userInfo.IsActive
+        };
 
-            _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        var json = JsonSerializer.Serialize(updateRequest, _jsonOptions);
+        Console.WriteLine($"AdminService: Sending update request for user {userId}: {json}");
+        
+        var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            // Tạo object phù hợp với backend AdminUserUpdateRequest
-            var updateRequest = new
-            {
-                FullName = userInfo.FullName,
-                Email = userInfo.Email,
-                DateOfBirth = userInfo.DateOfBirth,
-                Gender = userInfo.Gender,
-                Role = userInfo.Role,
-                IsActive = userInfo.IsActive
-            };
-
-            var json = JsonSerializer.Serialize(updateRequest, _jsonOptions);
-            Console.WriteLine($"AdminService: Sending update request for user {userId}: {json}");
-            
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-            var response = await _httpClient.PutAsync($"api/admin/users/{userId}", content);
-            Console.WriteLine($"AdminService: Update response status: {response.StatusCode}");
-            
-            if (!response.IsSuccessStatusCode)
-            {
-                var errorContent = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"AdminService: Error response: {errorContent}");
-            }
-            
-            return response.IsSuccessStatusCode;
-        }
-        catch
-        {
-            return false;
-        }
+        return await ExecuteAuthenticatedRequestWithContentAsync(updateRequest, () => 
+            _httpClient.PutAsync($"api/admin/users/{userId}", content));
     }
 
     public async Task<bool> DeleteUserAsync(int userId)
     {
-        try
-        {
-            var token = await _localStorage.GetItemAsync<string>("authToken");
-            if (string.IsNullOrEmpty(token))
-                return false;
-
-            _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-
-            var response = await _httpClient.DeleteAsync($"api/admin/users/{userId}");
-            return response.IsSuccessStatusCode;
-        }
-        catch
-        {
-            return false;
-        }
+        return await ExecuteAuthenticatedRequestAsync(() => 
+            _httpClient.DeleteAsync($"api/admin/users/{userId}"));
     }
 
     public async Task<List<PostInfo>> GetAllPostsAsync()
     {
-        try
-        {
-            var token = await _localStorage.GetItemAsync<string>("authToken");
-            if (string.IsNullOrEmpty(token))
-                return new List<PostInfo>();
-
-            _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-
-            var response = await _httpClient.GetAsync("api/admin/posts");
-            if (response.IsSuccessStatusCode)
-            {
-                var content = await response.Content.ReadAsStringAsync();
-                return JsonSerializer.Deserialize<List<PostInfo>>(content, _jsonOptions) ?? new List<PostInfo>();
-            }
-
-            return new List<PostInfo>();
-        }
-        catch
-        {
-            return new List<PostInfo>();
-        }
+        var result = await ExecuteAuthenticatedRequestAsync<List<PostInfo>>(() => 
+            _httpClient.GetAsync("api/admin/posts"));
+        return result ?? new List<PostInfo>();
     }
 
     public async Task<bool> UpdatePostAsync(int postId, PostInfo postInfo)
     {
-        try
-        {
-            var token = await _localStorage.GetItemAsync<string>("authToken");
-            if (string.IsNullOrEmpty(token))
-                return false;
+        var json = JsonSerializer.Serialize(postInfo, _jsonOptions);
+        var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-
-            var json = JsonSerializer.Serialize(postInfo, _jsonOptions);
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-            var response = await _httpClient.PutAsync($"api/admin/posts/{postId}", content);
-            return response.IsSuccessStatusCode;
-        }
-        catch
-        {
-            return false;
-        }
+        return await ExecuteAuthenticatedRequestWithContentAsync(postInfo, () => 
+            _httpClient.PutAsync($"api/admin/posts/{postId}", content));
     }
 
     public async Task<bool> DeletePostAsync(int postId)
     {
-        try
-        {
-            var token = await _localStorage.GetItemAsync<string>("authToken");
-            if (string.IsNullOrEmpty(token))
-                return false;
-
-            _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-
-            var response = await _httpClient.DeleteAsync($"api/admin/posts/{postId}");
-            return response.IsSuccessStatusCode;
-        }
-        catch
-        {
-            return false;
-        }
+        return await ExecuteAuthenticatedRequestAsync(() => 
+            _httpClient.DeleteAsync($"api/admin/posts/{postId}"));
     }
 
     public async Task<AdminStats> GetAdminStatsAsync()
     {
-        try
-        {
-            var token = await _localStorage.GetItemAsync<string>("authToken");
-            if (string.IsNullOrEmpty(token))
-                return new AdminStats();
-
-            _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-
-            var response = await _httpClient.GetAsync("api/admin/stats");
-            if (response.IsSuccessStatusCode)
-            {
-                var content = await response.Content.ReadAsStringAsync();
-                return JsonSerializer.Deserialize<AdminStats>(content, _jsonOptions) ?? new AdminStats();
-            }
-
-            return new AdminStats();
-        }
-        catch
-        {
-            return new AdminStats();
-        }
+        var result = await ExecuteAuthenticatedRequestAsync<AdminStats>(() => 
+            _httpClient.GetAsync("api/admin/stats"));
+        return result ?? new AdminStats();
     }
 }
 
