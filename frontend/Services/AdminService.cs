@@ -8,7 +8,6 @@ public interface IAdminService
 {
     Task<List<AdminUserInfo>> GetAllUsersAsync();
     Task<bool> UpdateUserAsync(int userId, AdminUserInfo userInfo);
-    Task<bool> DeleteUserAsync(int userId);
     Task<List<PostInfo>> GetAllPostsAsync();
     Task<bool> UpdatePostAsync(int postId, PostInfo postInfo);
     Task<bool> DeletePostAsync(int postId);
@@ -48,11 +47,6 @@ public class AdminService : BaseAuthenticatedService, IAdminService
             _httpClient.PutAsync($"api/admin/users/{userId}", content));
     }
 
-    public async Task<bool> DeleteUserAsync(int userId)
-    {
-        return await ExecuteAuthenticatedRequestAsync(() => 
-            _httpClient.DeleteAsync($"api/admin/users/{userId}"));
-    }
 
     public async Task<List<PostInfo>> GetAllPostsAsync()
     {

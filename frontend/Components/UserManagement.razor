@@ -78,9 +78,6 @@
                                     <Button Color="Color.Warning" @onclick="() => ToggleUserStatus(user)">
                                         <Blazorise.Icons.FontAwesome.Icon Name="@(user.IsActive ? IconName.Ban : IconName.Check)" />
                                     </Button>
-                                    <Button Color="Color.Danger" @onclick="() => DeleteUser(user)">
-                                        <Blazorise.Icons.FontAwesome.Icon Name="IconName.Times" />
-                                    </Button>
                                 </div>
                             </td>
                         </tr>
@@ -195,10 +192,45 @@
         border: 1px solid #dee2e6;
     }
 
+    .table {
+        table-layout: fixed;
+        width: 100%;
+    }
+
     .table th {
         background-color: #f8f9fa;
         border-bottom: 2px solid #dee2e6;
         font-weight: 600;
+    }
+
+    .table th:nth-child(1) { width: 5%; }   /* ID */
+    .table th:nth-child(2) { width: 8%; }   /* Avatar */
+    .table th:nth-child(3) { width: 12%; }  /* Username */
+    .table th:nth-child(4) { width: 15%; }  /* Full Name */
+    .table th:nth-child(5) { width: 20%; }  /* Email */
+    .table th:nth-child(6) { width: 8%; }   /* Role */
+    .table th:nth-child(7) { width: 12%; }  /* Status */
+    .table th:nth-child(8) { width: 10%; }  /* Created Date */
+    .table th:nth-child(9) { width: 10%; }  /* Actions */
+
+    .table td {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: middle;
+    }
+
+    .table td:nth-child(2) { /* Avatar column */
+        text-align: center;
+    }
+
+    .table td:nth-child(6), /* Role column */
+    .table td:nth-child(7) { /* Status column */
+        text-align: center;
+    }
+
+    .table td:nth-child(9) { /* Actions column */
+        text-align: center;
     }
 </style>
 
@@ -273,13 +305,4 @@
         }
     }
 
-    private async Task DeleteUser(AdminUserInfo user)
-    {
-        // TODO: Add confirmation dialog
-        var success = await adminService.DeleteUserAsync(user.Id);
-        if (success)
-        {
-            await LoadUsers();
-        }
-    }
 }
