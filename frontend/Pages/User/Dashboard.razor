@@ -3,6 +3,7 @@
 @using Microsoft.AspNetCore.Components.Forms
 @using Blazorise.Icons.FontAwesome
 @using frontend.Services
+@using frontend.Models
 @using Microsoft.AspNetCore.Components.Authorization
 @inject IAuthService authService
 @inject AuthenticationStateProvider authStateProvider
@@ -11,6 +12,7 @@
 @inject HttpClient Http
 @inject IPostService postService
 @inject IUploadService uploadService
+@inject CommentService commentService
 @inject NavigationManager Navigation
 <link href="css/dashboard.css" rel="stylesheet" />
 
@@ -19,6 +21,16 @@
     <div class="d-flex justify-content-center align-items-center" style="height: 50vh;">
         <div class="spinner-border text-primary" role="status">
             <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+}
+else if (currentUser == null)
+{
+    <div class="d-flex justify-content-center align-items-center" style="height: 50vh;">
+        <div class="alert alert-warning">
+            <h4>Không thể tải thông tin người dùng</h4>
+            <p>Vui lòng đăng nhập lại.</p>
+            <a href="/login" class="btn btn-primary">Đăng nhập</a>
         </div>
     </div>
 }
@@ -51,7 +63,7 @@ else
                                 }
                                 <div class="ms-2 flex-grow-1">
                                     <h6 class="mb-1">@(currentUser?.FullName ?? "User")</h6>
-                                    <InputText @bind-Text="newPostContent" Placeholder="Bạn đang nghĩ gì thế?" readonly Class="w-100" @onfocus="OpenCreateModal" />
+                                    <p>Mau chia sẻ những điều thú vị nào</p>
                                 </div>
                             </div>
                             <Button Color="Color.Primary" Size="Size.Small" Clicked="OpenCreateModal">Đăng bài</Button>
@@ -67,8 +79,17 @@ else
                 {
                     <div class="post-container mb-4">
                         <div class="post-header d-flex align-items-start mb-3">
-                            <img src="@(!string.IsNullOrEmpty(currentUser!.AvatarUrl) ? currentUser.AvatarUrl : "images/siu.jpg")" 
-                                class="rounded-circle me-3" style="width: 50px; height: 50px;" />
+                            @if (!string.IsNullOrEmpty(post.AuthorAvatarUrl))
+                            {
+                                <img src="@post.AuthorAvatarUrl" 
+                                    class="rounded-circle me-3" style="width: 50px; height: 50px;" />
+                            }
+                            else
+                            {
+                                <div class="d-flex align-items-center justify-content-center bg-light rounded-circle me-3" style="width: 50px; height: 50px;">
+                                    <Blazorise.Icons.FontAwesome.Icon Name="IconName.User" Size="IconSize.Small" Class="text-muted" />
+                                </div>
+                            }
                             <div class="flex-grow-1">
                                 <div class="d-flex align-items-center mb-1">
                                     <h6 class="mb-0 me-2">@post.AuthorName</h6>
@@ -118,8 +139,14 @@ else
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Nội dung</label>
-                    <TextEdit @bind-Text="Content" Placeholder="Hãy chia sẻ suy nghĩ của bạn..." Multiline="true" Rows="4" Class="w-100" Style="white-space: pre-wrap; overflow-y: auto;"/>
+                    <textarea @bind="Content"
+                            placeholder="Hãy chia sẻ suy nghĩ của bạn..."
+                            rows="4"
+                            class="form-control w-100"
+                            style="white-space: pre-wrap; overflow-y: auto;">
+                    </textarea>
                 </div>
+
                 <div class="mb-3">
                     <label class="form-label">Đăng ảnh</label>
                     <FileEdit Multiple="false" Accept=".jpg,.jpeg,.png,.gif" Class="w-100" Changed="OnFileSelected"/>
@@ -145,8 +172,17 @@ else
                     <!-- Post details -->
                     <div class="post-detail mb-4">
                         <div class="post-header d-flex align-items-start mb-3">
-                            <img src="@(!string.IsNullOrEmpty(currentUser?.AvatarUrl) ? currentUser.AvatarUrl : "images/siu.jpg")" 
-                                class="rounded-circle me-3" style="width: 50px; height: 50px;" />
+                            @if (!string.IsNullOrEmpty(selectedPost?.AuthorAvatarUrl))
+                            {
+                                <img src="@selectedPost.AuthorAvatarUrl" 
+                                    class="rounded-circle me-3" style="width: 50px; height: 50px;" />
+                            }
+                            else
+                            {
+                                <div class="d-flex align-items-center justify-content-center bg-light rounded-circle me-3" style="width: 50px; height: 50px;">
+                                    <Blazorise.Icons.FontAwesome.Icon Name="IconName.User" Size="IconSize.Small" Class="text-muted" />
+                                </div>
+                            }
                             <div class="flex-grow-1">
                                 <div class="d-flex align-items-center mb-1">
                                     <h6 class="mb-0 me-2">@(selectedPost?.AuthorName ?? "Unknown User")</h6>
@@ -163,34 +199,39 @@ else
                             <div style="white-space: pre-line; line-height: 1.4;">@(selectedPost?.Content ?? "")</div>  <!-- Thay <p> -->
                         </div>
 
-                        @if (!string.IsNullOrEmpty(selectedPost?.ImageUrl) || postImages.Count > 0)
+                        @if (!string.IsNullOrEmpty(selectedPost?.ImageUrl))
                         {
                             <div class="post-media mb-3">
-                                <img src="@(selectedPost?.ImageUrl ?? (postImages.Count > 0 ? postImages[0] : ""))" 
+                                <img src="@selectedPost.ImageUrl" 
                                      alt="Post Image" class="rounded cursor-pointer" style="width: 100%; height: auto; max-height: 500px; object-fit: cover;" 
-                                     @onclick="() => OpenImageModalByIndex(0)" />
+                                     @onclick="() => OpenImageModal(selectedPost.ImageUrl)" />
                             </div>
                         }
                     </div>
 
-                    <!-- Existing comments (hardcoded samples) -->
+                    <!-- Existing comments -->
                     <div class="comments-section mb-3">
-                        <h6 class="mb-2">Bình luận (2)</h6>
-                        <div class="comment-item d-flex align-items-start mb-2">
-                            <img src="images/siu.jpg" alt="Commenter Avatar" class="rounded-circle me-2 mt-1" style="width: 30px; height: 30px;" />
-                            <div class="flex-grow-1">
-                                <small class="fw-bold">User1</small>
-                                <div class="mb-0 small" style="white-space: pre-line;">Comment text here... Hay quá!</div>                                <small class="text-muted">1 giờ trước</small>
+                        <h6 class="mb-2">Bình luận (@comments.Count)</h6>
+                        @foreach (var comment in comments)
+                        {
+                            <div class="comment-item d-flex align-items-start mb-2">
+                                @if (!string.IsNullOrEmpty(comment.AuthorAvatarUrl))
+                                {
+                                    <img src="@comment.AuthorAvatarUrl" alt="Commenter Avatar" class="rounded-circle me-2 mt-1" style="width: 30px; height: 30px;" />
+                                }
+                                else
+                                {
+                                    <div class="d-flex align-items-center justify-content-center bg-light rounded-circle me-2 mt-1" style="width: 30px; height: 30px;">
+                                        <Blazorise.Icons.FontAwesome.Icon Name="IconName.User" Size="IconSize.ExtraSmall" Class="text-muted" />
+                                    </div>
+                                }
+                                <div class="flex-grow-1">
+                                    <small class="fw-bold">@comment.AuthorName</small>
+                                    <div class="mb-0 small" style="white-space: pre-line;">@comment.Content</div>
+                                    <small class="text-muted">@comment.CreatedAt.ToString("dd/MM/yyyy HH:mm")</small>
+                                </div>
                             </div>
-                        </div>
-                        <div class="comment-item d-flex align-items-start mb-2">
-                            <img src="images/siu.jpg" alt="Commenter Avatar" class="rounded-circle me-2 mt-1" style="width: 30px; height: 30px;" />
-                            <div class="flex-grow-1">
-                                <small class="fw-bold">User2</small>
-                                <p class="mb-0 small">Thú vị thật sự!</p>
-                                <small class="text-muted">30 phút trước</small>
-                            </div>
-                        </div>
+                        }
                     </div>
                 </div>
 
@@ -212,16 +253,16 @@ else
                         <!-- Input và Button -->
                         <div class="d-flex gap-2 w-100" style="align-items: flex-end;">
                             <div style="flex: 1; position: relative;">
-                                <TextEdit @bind-Value="newPostContent"
-                                         Placeholder="Viết bình luận..."
-                                         Class="comment-input w-100"
-                                         Multiline="true"
-                                         Rows="1"
-                                         Style="resize: none; border: 1px solid #ddd; border-radius: 20px; padding: 10px 15px; font-size: 14px; font-family: inherit;" />
+                                <textarea @bind="newCommentContent"
+                                         placeholder="Viết bình luận..."
+                                         class="comment-input w-100"
+                                         rows="1"
+                                         style="resize: none; border: 1px solid #ddd; border-radius: 20px; padding: 10px 15px; font-size: 14px; font-family: inherit; width: 100%;"></textarea>
                             </div>
                             <Button Color="Color.Primary"
                                    Size="Size.Small"
                                    Class="comment-submit-btn"
+                                   Clicked="SubmitComment"
                                    Style="border-radius: 50%; width: 36px; height: 36px; padding: 0; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                                 <Blazorise.Icons.FontAwesome.Icon Name="IconName.PaperPlane" />
                             </Button>
@@ -282,85 +323,17 @@ else
         padding-bottom: 1rem;
     }
 
-    .two-image {
-        border: 1px solid #eee;
-    }
-
-    .three-main-image {
-        border: 1px solid #eee;
-    }
-
-    .three-side-image {
-        border: 1px solid #eee;
-    }
-
-    .grid-image {
-        border: 1px solid #eee;
-    }
-
-    .full-image {
-        border: 1px solid #eee;
-    }
 
     .cursor-pointer {
         cursor: pointer;
     }
 
-    /* Modern comment button styles */
-    .modern-comment-btn {
-        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%) !important;
-        border: 1px solid #0056b3 !important;
-        border-radius: 25px !important;
-        padding: 0.5rem 1rem !important;
-        font-weight: 500;
-        transition: all 0.3s ease;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        box-shadow: 0 2px 4px rgba(0,123,255,0.25);
-        color: white !important;
-    }
 
-    .modern-comment-btn:hover {
-        background: linear-gradient(135deg, #0056b3 0%, #004085 100%) !important;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(0,123,255,0.3);
-        border-color: #004085 !important;
-        color: white !important;
-    }
-
-    .modern-comment-btn:active {
-        transform: translateY(0);
-        box-shadow: 0 1px 2px rgba(0,123,255,0.25);
-        color: white !important;
-    }
-
-    .modern-comment-btn .btn-icon {
-        color: white !important;
-        transition: color 0.3s ease;
-    }
-
-    .modern-comment-btn:hover .btn-icon {
-        color: white !important;
-    }
-
-    .image-close-btn {
-        color: white !important;
-        font-size: 1.2rem;
-        transition: background-color 0.3s ease;
-    }
-
-    .image-close-btn:hover {
-        background-color: rgba(0,0,0,0.7) !important;
-    }
 
     .close-icon-hover:hover {
         background-color: rgba(255,255,255,0.5) !important;
     }
 
-    .nav-icon-hover:hover {
-        background-color: rgba(255,255,255,0.5) !important;
-    }
 
     .comment-input {
         transition: all 0.3s ease !important;
@@ -401,14 +374,16 @@ else
     private string newPostContent { get; set; } = "";
     private string selectedImageUrl { get; set; } = "";
     private int currentImageIndex { get; set; } = 0;
-    private List<string> postImages { get; set; } = new() { "images/siu.jpg", "images/siu.jpg", "images/siu.jpg" }; // Example with 3 images; adjust count for testing
+    private List<string> postImages { get; set; } = new(); // Removed hardcoded test images
     private AuthResponse? currentUser;
     private bool isLoading = true;
     private List<Post> posts = new();
     private Post? selectedPost; // Thêm field để lưu post hiện tại cho modal
+    private List<Comment> comments = new(); // Danh sách comments cho post hiện tại
     private IFileEntry? ImageFile { get; set; }
     private string Title { get; set; } = string.Empty;
     private string Content { get; set; } = string.Empty;
+    private string newCommentContent { get; set; } = string.Empty; // Nội dung comment mới
     protected override async Task OnInitializedAsync()
     {
         PageTitleService.Title = "Dashboard";
@@ -486,7 +461,7 @@ else
 
     private async Task PostArticle()
     {
-        string imageUrl = null;
+        string? imageUrl = null;
 
         // Upload ảnh nếu có chọn
         if (ImageFile != null)
@@ -524,7 +499,6 @@ else
         await CloseCreateModal();
     }
 
-private string DebugText = "";
     //hàm lấy ảnh lưu vào biến
     private void OnFileSelected(FileChangedEventArgs e)
     {
@@ -532,11 +506,11 @@ private string DebugText = "";
         ImageFile = e.Files.FirstOrDefault();
     }
 
-    private Task OpenPostModal(Post post)
+    private async Task OpenPostModal(Post post)
     {
         selectedPost = post;  // Lưu post để dùng trong modal
+        comments = await commentService.GetCommentsByPostAsync(post.PostId); // Load comments
         IsPostModalOpen = true;
-        return Task.CompletedTask;
     }
 
     private Task OnPostVisibleChanged(bool visible)
@@ -547,6 +521,8 @@ private string DebugText = "";
 
     private Task ClosePostModal()
     {
+        comments.Clear(); // Clear comments khi đóng modal
+        newCommentContent = string.Empty; // Clear comment input
         return postModalRef.Hide();
     }
 
@@ -567,21 +543,6 @@ private string DebugText = "";
         }
     }
 
-    private async Task OpenImageModalByIndex(int index)
-    {
-        if (index >= 0 && index < postImages.Count)
-        {
-            currentImageIndex = index;
-            selectedImageUrl = postImages[index];
-            IsImageModalOpen = true;
-            StateHasChanged();
-            await Task.Delay(100);  // Delay để modal render mượt
-            if (imageModalRef != null)
-            {
-                await imageModalRef.Show();
-            }
-        }
-    }
 
     private Task OnImageVisibleChanged(bool visible)
     {
@@ -604,25 +565,48 @@ private string DebugText = "";
         return Task.CompletedTask;
     }
 
-    private Task NextImage()
-    {
-        if (currentImageIndex < postImages.Count - 1)
-        {
-            currentImageIndex++;
-            selectedImageUrl = postImages[currentImageIndex];
-            StateHasChanged();
-        }
-        return Task.CompletedTask;
-    }
 
-    private Task PreviousImage()
+    private async Task SubmitComment()
     {
-        if (currentImageIndex > 0)
+        Console.WriteLine($"SubmitComment called - newCommentContent: '{newCommentContent}', selectedPost: {selectedPost?.PostId}");
+        
+        if (string.IsNullOrWhiteSpace(newCommentContent))
         {
-            currentImageIndex--;
-            selectedImageUrl = postImages[currentImageIndex];
-            StateHasChanged();
+            Console.WriteLine("Comment content is empty");
+            return;
         }
-        return Task.CompletedTask;
+        
+        if (selectedPost == null)
+        {
+            Console.WriteLine("Selected post is null");
+            return;
+        }
+
+        try
+        {
+            var request = new CreateCommentRequest
+            {
+                Content = newCommentContent.Trim()
+            };
+
+            Console.WriteLine($"Creating comment for post {selectedPost.PostId}: {request.Content}");
+            var newComment = await commentService.CreateCommentAsync(selectedPost.PostId, request);
+            
+            if (newComment != null)
+            {
+                Console.WriteLine($"Comment created successfully: {newComment.CommentId}");
+                comments.Add(newComment);
+                newCommentContent = string.Empty;
+                StateHasChanged();
+            }
+            else
+            {
+                Console.WriteLine("Failed to create comment - response was null");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error submitting comment: {ex.Message}");
+        }
     }
 }

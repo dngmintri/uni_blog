@@ -1,12 +1,12 @@
 using System.Net.Http.Json;
+using frontend.Services;
 
-public class PostService : IPostService
+public class PostService : BaseAuthenticatedService, IPostService
 {
-    private readonly HttpClient _http;
     private readonly IUploadService _uploadService;
-    public PostService(HttpClient http,IUploadService uploadService)
+    public PostService(HttpClient http, ITokenManagerService tokenManager, IUploadService uploadService) 
+        : base(http, tokenManager)
     {
-        _http = http;
         _uploadService = uploadService;
     }
 
@@ -14,7 +14,7 @@ public class PostService : IPostService
     {
         try
         {
-            var response = await _http.GetFromJsonAsync<PostsResponse>("api/posts");
+            var response = await _httpClient.GetFromJsonAsync<PostsResponse>("api/posts");
             return response?.Items ?? new List<Post>();
         }
         catch
@@ -27,11 +27,16 @@ public class PostService : IPostService
     {
         try
         {
-            var response = await _http.PostAsJsonAsync("api/posts", post);
-            return response.IsSuccessStatusCode;
+            var json = System.Text.Json.JsonSerializer.Serialize(post);
+            var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+            
+            var success = await ExecuteAuthenticatedRequestAsync(() =>
+                _httpClient.PostAsync("api/posts", content));
+            return success;
         }
-        catch
+        catch (Exception ex)
         {
+            Console.WriteLine($"Error creating post: {ex.Message}");
             return false;
         }
     }

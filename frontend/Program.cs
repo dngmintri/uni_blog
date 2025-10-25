@@ -49,6 +49,9 @@ builder.Services.AddScoped<IPostService, PostService>();
 //Đăng ký UploadService
 builder.Services.AddScoped<IUploadService, UploadService>();
 
+//Đăng ký CommentService
+builder.Services.AddScoped<CommentService>();
+
 // Cấu hình Blazorise
 builder.Services
     .AddBlazorise(options =>

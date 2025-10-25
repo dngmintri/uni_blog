@@ -23,7 +23,9 @@ public class CommentService : ICommentService
 			PostId = c.PostId,
 			UserId = c.UserId,
 			Content = c.Content,
-			CreatedAt = c.CreatedAt
+			CreatedAt = c.CreatedAt,
+			AuthorName = c.User?.FullName,
+			AuthorAvatarUrl = c.User?.AvatarUrl
 		});
 	}
 
@@ -43,13 +45,17 @@ public class CommentService : ICommentService
 		await _comments.AddAsync(entity);
 		await _comments.SaveChangesAsync();
 
+		// Get the created comment with user info
+		var createdComment = await _comments.GetByIdWithUserAsync(entity.CommentId);
 		return new CommentDto
 		{
 			CommentId = entity.CommentId,
 			PostId = entity.PostId,
 			UserId = entity.UserId,
 			Content = entity.Content,
-			CreatedAt = entity.CreatedAt
+			CreatedAt = entity.CreatedAt,
+			AuthorName = createdComment?.User?.FullName,
+			AuthorAvatarUrl = createdComment?.User?.AvatarUrl
 		};
 	}
 }
