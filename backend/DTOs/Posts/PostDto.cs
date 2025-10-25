@@ -13,4 +13,5 @@ public class PostDto
     public bool IsPublished { get; set; }
     public bool IsDeleted { get; set; }
     public string? AuthorName { get; set; }
+    public string? AuthorAvatarUrl { get; set; }
 }

@@ -35,7 +35,8 @@ public class PostService : IPostService
 			Views = p.Views,
 			IsPublished = p.IsPublished,
 			IsDeleted = p.IsDeleted,
-			AuthorName = p.User?.FullName
+			AuthorName = p.User?.FullName,
+			AuthorAvatarUrl = p.User?.AvatarUrl
 		}).ToList();
 
 		return new PagedResult<PostDto> { Total = total, Items = resultItems };
@@ -61,7 +62,8 @@ public class PostService : IPostService
 			Views = post.Views,
 			IsPublished = post.IsPublished,
 			IsDeleted = post.IsDeleted,
-			AuthorName = post.User?.FullName
+			AuthorName = post.User?.FullName,
+			AuthorAvatarUrl = post.User?.AvatarUrl
 		};
 	}
 

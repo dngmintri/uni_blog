@@ -16,9 +16,15 @@ public class CommentRepository : ICommentRepository
 	public async Task<IEnumerable<Comment>> GetByPostAsync(int postId) =>
 		await _db.Comments
 			.AsNoTracking()
-			.Where(c => c.PostId == postId)
+			.Include(c => c.User)
+			.Where(c => c.PostId == postId && !c.IsDeleted)
 			.OrderBy(c => c.CreatedAt)
 			.ToListAsync();
+
+	public async Task<Comment?> GetByIdWithUserAsync(int id) =>
+		await _db.Comments
+			.Include(c => c.User)
+			.FirstOrDefaultAsync(c => c.CommentId == id);
 
 	public async Task AddAsync(Comment comment) => await _db.Comments.AddAsync(comment);
 
