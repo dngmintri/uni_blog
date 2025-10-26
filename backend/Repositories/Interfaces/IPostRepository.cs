@@ -13,4 +13,6 @@ public interface IPostRepository
 	Task UpdateAsync(Post post);
 	Task DeleteAsync(int id);
 	Task SaveChangesAsync();
+	// Add method:
+	Task<IEnumerable<Post>> GetByUserIdAsync(int userId);
 }

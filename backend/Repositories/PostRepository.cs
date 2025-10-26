@@ -59,5 +59,14 @@ public class PostRepository : IPostRepository
 		}
 	}
 
+	public async Task<IEnumerable<Post>> GetByUserIdAsync(int userId)
+	{
+		return await _db.Posts
+			.Include(p => p.User)
+			.Where(p => p.UserId == userId && !p.IsDeleted && p.IsPublished)
+			.OrderByDescending(p => p.CreatedAt)
+			.ToListAsync();
+	}
+
 	public Task SaveChangesAsync() => _db.SaveChangesAsync();
 }

@@ -128,4 +128,24 @@ public class PostService : IPostService
 		await _posts.SaveChangesAsync();
 		return true;
 	}
+
+	public async Task<IEnumerable<PostDto>> GetByUserIdAsync(int userId)
+	{
+		var posts = await _posts.GetByUserIdAsync(userId);
+		return posts.Select(p => new PostDto
+		{
+			PostId = p.PostId,
+			UserId = p.UserId,
+			Title = p.Title,
+			Content = p.Content,
+			ImageUrl = p.ImageUrl,
+			CreatedAt = p.CreatedAt,
+			UpdatedAt = p.UpdatedAt,
+			Views = p.Views,
+			IsPublished = p.IsPublished,
+			IsDeleted = p.IsDeleted,
+			AuthorName = p.User?.FullName,
+			AuthorAvatarUrl = p.User?.AvatarUrl
+		}).ToList();
+	}
 }
