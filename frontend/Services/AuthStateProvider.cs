@@ -39,8 +39,14 @@ public class AuthStateProvider : AuthenticationStateProvider
 
     public async Task MarkUserAsAuthenticated(AuthResponse userInfo)
     {
+        Console.WriteLine($"AuthStateProvider: Saving userInfo for {userInfo.Username}");
+        Console.WriteLine($"AuthStateProvider: RefreshToken to save: {userInfo.RefreshToken?.Substring(0, 20)}...");
+        
         await _localStorage.SetItemAsync("userInfo", JsonSerializer.Serialize(userInfo));
         await _localStorage.SetItemAsync("authToken", userInfo.AccessToken);
+        await _localStorage.SetItemAsync("refreshToken", userInfo.RefreshToken);
+        
+        Console.WriteLine("AuthStateProvider: All tokens saved to localStorage");
         NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
     }
 
@@ -48,6 +54,7 @@ public class AuthStateProvider : AuthenticationStateProvider
     {
         await _localStorage.RemoveItemAsync("userInfo");
         await _localStorage.RemoveItemAsync("authToken");
+        await _localStorage.RemoveItemAsync("refreshToken");
         NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
     }
 

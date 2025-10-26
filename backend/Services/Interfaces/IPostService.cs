@@ -10,4 +10,5 @@ public interface IPostService
 	Task<PostDto> CreateAsync(int userId, CreatePostRequest req);
 	Task<bool> UpdateAsync(int id, int currentUserId, bool isAdmin, UpdatePostRequest req);
 	Task<bool> SoftDeleteAsync(int id, int currentUserId, bool isAdmin);
+	Task<IEnumerable<PostDto>> GetByUserIdAsync(int userId);
 }

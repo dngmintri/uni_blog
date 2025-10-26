@@ -55,4 +55,37 @@ public class PostService : BaseAuthenticatedService, IPostService
             return false;
         }
     }
+    public async Task<List<Post>> GetPostsByUserIdAsync(int userId)
+    {
+        try
+        {
+            Console.WriteLine($"📡 PostService.GetPostsByUserIdAsync: Calling api/posts/user/{userId}");
+            var response = await _httpClient.GetAsync($"api/posts/user/{userId}");
+            Console.WriteLine($"📡 PostService.GetPostsByUserIdAsync: Response status = {response.StatusCode}");
+            
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"📡 PostService.GetPostsByUserIdAsync: Response content length = {content.Length}");
+                Console.WriteLine($"📡 PostService.GetPostsByUserIdAsync: Response content preview = {content.Substring(0, Math.Min(200, content.Length))}");
+                
+                var posts = System.Text.Json.JsonSerializer.Deserialize<List<Post>>(content, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                Console.WriteLine($"📦 PostService.GetPostsByUserIdAsync: Deserialized {posts?.Count ?? 0} posts");
+                return posts ?? new List<Post>();
+            }
+            else
+            {
+                Console.WriteLine($"❌ PostService.GetPostsByUserIdAsync: Failed with status {response.StatusCode}");
+                var errorContent = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"❌ PostService.GetPostsByUserIdAsync: Error content = {errorContent}");
+                return new List<Post>();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ PostService.GetPostsByUserIdAsync: Exception = {ex.Message}");
+            Console.WriteLine($"❌ PostService.GetPostsByUserIdAsync: Stack trace = {ex.StackTrace}");
+            return new List<Post>();
+        }
+    }
 }

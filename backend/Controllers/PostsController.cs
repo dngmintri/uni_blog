@@ -29,6 +29,16 @@ public class PostsController : ControllerBase
         return Ok(result);
     }
 
+    // Add new endpoint after the existing Get method:
+    [HttpGet("user/{userId}")]
+    public async Task<ActionResult<IEnumerable<PostDto>>> GetByUserId(int userId)
+    {
+        Console.WriteLine($"🔄 PostsController.GetByUserId: Called with userId = {userId}");
+        var posts = await _posts.GetByUserIdAsync(userId);
+        Console.WriteLine($"📦 PostsController.GetByUserId: Got {posts.Count()} posts");
+        return Ok(posts);
+    }
+
     [HttpGet("{id:int:min(1)}")]
     public async Task<ActionResult<PostDto>> GetById(int id)
     {

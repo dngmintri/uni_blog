@@ -92,16 +92,25 @@ public class TokenManagerService : ITokenManagerService
     {
         try
         {
-            // TODO: Implement refresh token logic với backend
-            // Hiện tại không có refresh endpoint, nên không clear token
-            // Chỉ return false để báo rằng không refresh được, nhưng không clear token
-            Console.WriteLine("TokenManager: Token refresh not implemented yet - keeping current token");
-            await Task.CompletedTask; // Remove warning about async method
-            return false;
+            Console.WriteLine("TokenManager: Attempting to refresh token");
+            var refreshed = await _authService.RefreshTokenAsync();
+            
+            if (refreshed)
+            {
+                Console.WriteLine("TokenManager: Token refreshed successfully");
+                return true;
+            }
+            else
+            {
+                Console.WriteLine("TokenManager: Token refresh failed - clearing tokens");
+                await ClearTokenAsync();
+                return false;
+            }
         }
         catch (Exception ex)
         {
             Console.WriteLine($"TokenManager: Error during token refresh: {ex.Message}");
+            await ClearTokenAsync();
             return false;
         }
     }

@@ -34,8 +34,11 @@ public class UsersController : ControllerBase
             var user = await _userRepository.GetByIdAsync(userId);
             if (user == null) return NotFound();
 
+            Console.WriteLine($"📡 UsersController.GetProfile: user.UserId = {user.UserId}");
+            
             var authResponse = new AuthResponse
             {
+                UserId = user.UserId,
                 Username = user.Username,
                 Email = user.Email,
                 FullName = user.FullName,
@@ -44,6 +47,8 @@ public class UsersController : ControllerBase
                 DateOfBirth = user.DateOfBirth,
                 Gender = user.Gender
             };
+            
+            Console.WriteLine($"📡 UsersController.GetProfile: authResponse.UserId = {authResponse.UserId}");
 
             return Ok(authResponse);
         }
