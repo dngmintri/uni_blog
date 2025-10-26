@@ -1,7 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using Blazorise;
-using Blazored.LocalStorage;
+using frontend.Models;
 
 namespace frontend.Services;
 
@@ -35,7 +35,7 @@ public class UserService : BaseAuthenticatedService, IUserService
             _httpClient.PutAsync("api/users/profile", content));
     }
 
-    public async Task<bool> ChangePasswordAsync(frontend.Pages.User.Profile.PasswordChange passwordChange)
+    public async Task<bool> ChangePasswordAsync(PasswordChange passwordChange)
     {
         var changePasswordRequest = new
         {

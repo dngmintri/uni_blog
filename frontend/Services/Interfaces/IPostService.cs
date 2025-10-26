@@ -1,4 +1,5 @@
 using frontend.Models;
+namespace frontend.Services;
 
 public interface IPostService
 {

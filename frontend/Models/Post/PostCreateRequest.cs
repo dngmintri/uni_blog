@@ -1,3 +1,4 @@
+namespace frontend.Models;
 public class PostCreateRequest
 {
     public string Title { get; set; } = "";
