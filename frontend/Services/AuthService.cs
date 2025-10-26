@@ -1,20 +1,9 @@
 using System.Text;
 using System.Text.Json;
 using Blazored.LocalStorage;
+using frontend.Models;
 
 namespace frontend.Services;
-
-public interface IAuthService
-{
-    Task<AuthResponse?> RegisterAsync(RegisterRequest request);
-    Task<AuthResponse?> LoginAsync(LoginRequest request);
-    Task<AuthResponse?> RefreshTokenAsync(string refreshToken);
-    Task LogoutAsync();
-    Task<AuthResponse?> GetCurrentUserAsync();
-    Task UpdateLocalUserInfo(AuthResponse? userInfo);
-    Task<bool> IsTokenExpiredAsync();
-    Task<bool> RefreshTokenAsync();
-}
 
 public class AuthService : IAuthService
 {
@@ -267,35 +256,4 @@ public class AuthService : IAuthService
             return null;
         }
     }
-}
-
-public class RegisterRequest
-{
-    public string FullName { get; set; } = string.Empty;
-    public string Username { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
-    public string Password { get; set; } = string.Empty;
-    public DateTime? DateOfBirth { get; set; }
-    public string? Gender { get; set; }
-}
-
-public class LoginRequest
-{
-    public string Username { get; set; } = string.Empty;
-    public string Password { get; set; } = string.Empty;
-}
-
-public class AuthResponse
-{
-    public string AccessToken { get; set; } = string.Empty;
-    public string RefreshToken { get; set; } = string.Empty;
-    public string Username { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
-    public string FullName { get; set; } = string.Empty;
-    public string Role { get; set; } = string.Empty;
-    public string? AvatarUrl { get; set; }
-    public DateTime? DateOfBirth { get; set; }
-    public string? Gender { get; set; }
-    public DateTime? ExpiresAt { get; set; }
-    public int UserId { get; set; }
 }

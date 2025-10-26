@@ -1,11 +1,12 @@
 using System.Net.Http.Json;
-using frontend.Services;
 using frontend.Models;
+
+namespace frontend.Services;
 
 public class PostService : BaseAuthenticatedService, IPostService
 {
     private readonly IUploadService _uploadService;
-    public PostService(HttpClient http, ITokenManagerService tokenManager, IUploadService uploadService) 
+    public PostService(HttpClient http, ITokenManagerService tokenManager, IUploadService uploadService)
         : base(http, tokenManager)
     {
         _uploadService = uploadService;
@@ -44,7 +45,7 @@ public class PostService : BaseAuthenticatedService, IPostService
         {
             var json = System.Text.Json.JsonSerializer.Serialize(post);
             var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
-            
+
             var success = await ExecuteAuthenticatedRequestAsync(() =>
                 _httpClient.PostAsync("api/posts", content));
             return success;
@@ -59,32 +60,32 @@ public class PostService : BaseAuthenticatedService, IPostService
     {
         try
         {
-            Console.WriteLine($"📡 PostService.GetPostsByUserIdAsync: Calling api/posts/user/{userId}");
+            // Console.WriteLine($"📡 PostService.GetPostsByUserIdAsync: Calling api/posts/user/{userId}");
             var response = await _httpClient.GetAsync($"api/posts/user/{userId}");
-            Console.WriteLine($"📡 PostService.GetPostsByUserIdAsync: Response status = {response.StatusCode}");
-            
+            // Console.WriteLine($"📡 PostService.GetPostsByUserIdAsync: Response status = {response.StatusCode}");
+
             if (response.IsSuccessStatusCode)
             {
                 var content = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"📡 PostService.GetPostsByUserIdAsync: Response content length = {content.Length}");
-                Console.WriteLine($"📡 PostService.GetPostsByUserIdAsync: Response content preview = {content.Substring(0, Math.Min(200, content.Length))}");
-                
+                // Console.WriteLine($"📡 PostService.GetPostsByUserIdAsync: Response content length = {content.Length}");
+                // Console.WriteLine($"📡 PostService.GetPostsByUserIdAsync: Response content preview = {content.Substring(0, Math.Min(200, content.Length))}");
+
                 var posts = System.Text.Json.JsonSerializer.Deserialize<List<Post>>(content, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                Console.WriteLine($"📦 PostService.GetPostsByUserIdAsync: Deserialized {posts?.Count ?? 0} posts");
+                // Console.WriteLine($"📦 PostService.GetPostsByUserIdAsync: Deserialized {posts?.Count ?? 0} posts");
                 return posts ?? new List<Post>();
             }
             else
             {
-                Console.WriteLine($"❌ PostService.GetPostsByUserIdAsync: Failed with status {response.StatusCode}");
+                // Console.WriteLine($"❌ PostService.GetPostsByUserIdAsync: Failed with status {response.StatusCode}");
                 var errorContent = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"❌ PostService.GetPostsByUserIdAsync: Error content = {errorContent}");
+                // Console.WriteLine($"❌ PostService.GetPostsByUserIdAsync: Error content = {errorContent}");
                 return new List<Post>();
             }
         }
         catch (Exception ex)
         {
             Console.WriteLine($"❌ PostService.GetPostsByUserIdAsync: Exception = {ex.Message}");
-            Console.WriteLine($"❌ PostService.GetPostsByUserIdAsync: Stack trace = {ex.StackTrace}");
+            // Console.WriteLine($"❌ PostService.GetPostsByUserIdAsync: Stack trace = {ex.StackTrace}");
             return new List<Post>();
         }
     }

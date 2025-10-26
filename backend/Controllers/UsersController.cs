@@ -4,6 +4,7 @@ using Backend.Repositories.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using Backend.DTOs.Common;
 
 namespace Backend.Controllers;
 
@@ -242,23 +243,4 @@ public class UsersController : ControllerBase
         }
         return 0;
     }
-}
-
-public class UpdateProfileRequest
-{
-    public string FullName { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
-    public DateTime? DateOfBirth { get; set; }
-    public string? Gender { get; set; }
-}
-
-public class ChangePasswordRequest
-{
-    public string CurrentPassword { get; set; } = string.Empty;
-    public string NewPassword { get; set; } = string.Empty;
-}
-
-public class UpdateAvatarRequest
-{
-    public string AvatarUrl { get; set; } = string.Empty;
 }

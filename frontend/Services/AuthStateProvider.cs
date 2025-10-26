@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 using System.Security.Claims;
 using System.Text.Json;
 using Blazored.LocalStorage;
+using frontend.Models;
 
 namespace frontend.Services;
 

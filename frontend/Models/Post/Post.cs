@@ -1,3 +1,4 @@
+namespace frontend.Models;
 public class Post
 {
     public int PostId { get; set; }
