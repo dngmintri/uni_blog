@@ -87,3 +87,4 @@ packages/
 _ReSharper*/
 *.DotSettings.user
 /backend/wwwroot/uploads/avatars
+/backend/wwwroot/uploads
