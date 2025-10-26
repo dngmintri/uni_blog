@@ -131,8 +131,11 @@ public class PostService : IPostService
 
 	public async Task<IEnumerable<PostDto>> GetByUserIdAsync(int userId)
 	{
+		Console.WriteLine($"🔄 PostService.GetByUserIdAsync: Called with userId = {userId}");
 		var posts = await _posts.GetByUserIdAsync(userId);
-		return posts.Select(p => new PostDto
+		Console.WriteLine($"📦 PostService.GetByUserIdAsync: Retrieved {posts.Count()} posts from repository");
+		
+		var result = posts.Select(p => new PostDto
 		{
 			PostId = p.PostId,
 			UserId = p.UserId,
@@ -147,5 +150,8 @@ public class PostService : IPostService
 			AuthorName = p.User?.FullName,
 			AuthorAvatarUrl = p.User?.AvatarUrl
 		}).ToList();
+		
+		Console.WriteLine($"✅ PostService.GetByUserIdAsync: Returning {result.Count} posts");
+		return result;
 	}
 }

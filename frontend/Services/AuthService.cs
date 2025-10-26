@@ -174,9 +174,17 @@ public class AuthService : IAuthService
         {
             var userInfoJson = await _localStorage.GetItemAsync<string>("userInfo");
             if (string.IsNullOrEmpty(userInfoJson))
+            {
+                Console.WriteLine("🔍 GetCurrentUserAsync: userInfoJson is empty");
                 return null;
+            }
+
+            Console.WriteLine($"🔍 GetCurrentUserAsync: userInfoJson length = {userInfoJson.Length}");
+            Console.WriteLine($"🔍 GetCurrentUserAsync: userInfoJson preview = {userInfoJson.Substring(0, Math.Min(200, userInfoJson.Length))}");
 
             var userInfo = JsonSerializer.Deserialize<AuthResponse>(userInfoJson, _jsonOptions);
+            Console.WriteLine($"🔍 GetCurrentUserAsync: Deserialized UserId = {userInfo?.UserId}");
+            Console.WriteLine($"🔍 GetCurrentUserAsync: Deserialized Username = {userInfo?.Username}");
             
             // Đảm bảo token được lấy từ localStorage riêng biệt
             var token = await _localStorage.GetItemAsync<string>("authToken");
@@ -289,4 +297,5 @@ public class AuthResponse
     public DateTime? DateOfBirth { get; set; }
     public string? Gender { get; set; }
     public DateTime? ExpiresAt { get; set; }
+    public int UserId { get; set; }
 }

@@ -41,6 +41,18 @@ public class PostRepository : IPostRepository
 			.ToListAsync();
 	}
 
+	public async Task<IEnumerable<Post>> GetByUserIdAsync(int userId)
+	{
+		Console.WriteLine($"🔄 PostRepository.GetByUserIdAsync: Querying for userId = {userId}");
+		var posts = await _db.Posts
+			.Include(p => p.User)
+			.Where(p => p.UserId == userId && !p.IsDeleted && p.IsPublished)
+			.OrderByDescending(p => p.CreatedAt)
+			.ToListAsync();
+		Console.WriteLine($"📦 PostRepository.GetByUserIdAsync: Found {posts.Count} posts");
+		return posts;
+	}
+
 	public async Task AddAsync(Post post) => await _db.Posts.AddAsync(post);
 
 	public async Task UpdateAsync(Post post)
@@ -57,15 +69,6 @@ public class PostRepository : IPostRepository
 			_db.Posts.Remove(post);
 			await _db.SaveChangesAsync();
 		}
-	}
-
-	public async Task<IEnumerable<Post>> GetByUserIdAsync(int userId)
-	{
-		return await _db.Posts
-			.Include(p => p.User)
-			.Where(p => p.UserId == userId && !p.IsDeleted && p.IsPublished)
-			.OrderByDescending(p => p.CreatedAt)
-			.ToListAsync();
 	}
 
 	public Task SaveChangesAsync() => _db.SaveChangesAsync();

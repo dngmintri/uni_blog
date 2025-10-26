@@ -3,6 +3,7 @@
 @using Blazorise.Icons.FontAwesome
 @using Blazorise.Components
 @using frontend.Services
+@using frontend.Models
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Components
 @using Microsoft.AspNetCore.Components.Forms
@@ -16,6 +17,8 @@
 @inject NavigationManager navigationManager
 @inject PageTitleService PageTitleService
 @inject IUserUpdateService userUpdateService
+@inject IPostService postService
+@inject CommentService commentService
 
 <link href="css/dashboard.css" rel="stylesheet" />
 
@@ -192,11 +195,51 @@ else
                             <h5 class="mb-0">Bài viết của tôi</h5>
                         </div>
                         <div class="card-body">
-                            <div class="text-center text-muted py-5">
-                                <Blazorise.Icons.FontAwesome.Icon Name="IconName.File" Size="IconSize.X3" />
-                                <p class="mt-3">Chưa có bài viết nào</p>
-                                <Button Color="Color.Primary" @onclick="GoToDashboard">Viết bài mới</Button>
-                            </div>
+                            @if (isLoadingPosts)
+                            {
+                                <div class="text-center py-4">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </div>
+                            }
+                            else if (userPosts == null || !userPosts.Any())
+                            {
+                                <div class="text-center text-muted py-5">
+                                    <Blazorise.Icons.FontAwesome.Icon Name="IconName.File" Size="IconSize.X3" />
+                                    <p class="mt-3">Chưa có bài viết nào</p>
+                                    <Button Color="Color.Primary" @onclick="GoToDashboard">Viết bài mới</Button>
+                                </div>
+                            }
+                            else
+                            {
+                                @foreach (var post in userPosts)
+                                {
+                                    <div class="post-item mb-3" style="cursor: pointer;" @onclick="() => OpenPostModal(post)">
+                                        <div class="d-flex align-items-start mb-2">
+                                            <div class="flex-grow-1">
+                                                <h6 class="mb-1 fw-bold">@post.Title</h6>
+                                                <small class="text-muted">
+                                                    <i class="far fa-calendar"></i> @post.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                                                </small>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="post-content mb-2">
+                                            <p style="white-space: pre-line; line-height: 1.4; color: #555; margin-bottom: 0;">
+                                                @(post.Content.Length > 150 ? post.Content.Substring(0, 150) + "..." : post.Content)
+                                            </p>
+                                        </div>
+
+                                        @if (!string.IsNullOrEmpty(post.ImageUrl))
+                                        {
+                                            <div class="post-media mb-2">
+                                                <img src="@post.ImageUrl" class="rounded" style="width: 100%; max-height: 180px; object-fit: cover;" />
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            }
                         </div>
                     </div>
                 }
@@ -241,6 +284,52 @@ else
             </ModalFooter>
         </ModalContent>
     </Modal>
+
+    <!-- Modal Chi tiết bài viết -->
+    @if (selectedPost != null)
+    {
+        <Modal @ref="postModalRef" Visible="@IsPostModalOpen" VisibleChanged="OnPostVisibleChanged" Size="ModalSize.Large">
+            <ModalContent Centered="true" Style="max-height: 80vh;">
+                <ModalHeader>
+                    <ModalTitle>Chi tiết bài viết</ModalTitle>
+                    <CloseButton Clicked="ClosePostModal" />
+                </ModalHeader>
+                <ModalBody Style="display: flex; flex-direction: column; max-height: calc(80vh - 120px);">
+                    <div style="flex: 1; overflow-y: auto;">
+                        <div class="post-detail mb-4">
+                            <h5 class="mb-3 fw-bold">@selectedPost.Title</h5>
+                            <small class="text-muted mb-3 d-block">
+                                <i class="far fa-calendar"></i> @selectedPost.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                            </small>
+                            <div class="post-content mb-3">
+                                <div style="white-space: pre-line; line-height: 1.6;">@selectedPost.Content</div>
+                            </div>
+                            @if (!string.IsNullOrEmpty(selectedPost.ImageUrl))
+                            {
+                                <div class="post-media mb-3">
+                                    <img src="@selectedPost.ImageUrl" alt="Post Image" class="rounded" style="width: 100%; max-height: 400px; object-fit: cover;" />
+                                </div>
+                            }
+                        </div>
+
+                        <div class="comments-section">
+                            <h6 class="mb-3">Bình luận (@comments.Count)</h6>
+                            @foreach (var comment in comments)
+                            {
+                                <div class="comment-item d-flex align-items-start mb-3 p-3 bg-light rounded">
+                                    <div class="flex-grow-1">
+                                        <small class="fw-bold d-block">@comment.AuthorName</small>
+                                        <div class="mb-1">@comment.Content</div>
+                                        <small class="text-muted">@comment.CreatedAt.ToString("dd/MM/yyyy HH:mm")</small>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </ModalBody>
+            </ModalContent>
+        </Modal>
+    }
 }
 
 @code {
@@ -263,6 +352,15 @@ else
     private IBrowserFile? selectedFile;
     private string avatarPreview = string.Empty;
 
+    // Posts
+    private List<Post> userPosts = new();
+    private bool isLoadingPosts = false;
+    private Post? selectedPost;
+    private List<Comment> comments = new();
+    private string newCommentContent = string.Empty;
+    private bool IsPostModalOpen = false;
+    private Modal? postModalRef;
+
     protected override async Task OnInitializedAsync()
     {
         PageTitleService.Title = "Trang cá nhân";
@@ -275,6 +373,21 @@ else
         {
             // Chỉ load từ localStorage, không gọi API
             currentUser = await authService.GetCurrentUserAsync();
+            
+            Console.WriteLine($"🔍 LoadCurrentUser: currentUser is null? {currentUser == null}");
+            if (currentUser != null)
+            {
+                Console.WriteLine($"🔍 LoadCurrentUser: UserId = {currentUser.UserId}");
+                Console.WriteLine($"🔍 LoadCurrentUser: Username = {currentUser.Username}");
+                Console.WriteLine($"🔍 LoadCurrentUser: FullName = {currentUser.FullName}");
+                
+                // Nếu UserId = 0, cần fetch từ backend
+                if (currentUser.UserId == 0)
+                {
+                    Console.WriteLine("⚠️ LoadCurrentUser: UserId is 0, fetching from backend...");
+                    await FetchAndUpdateUserId();
+                }
+            }
             
             if (currentUser == null)
             {
@@ -313,13 +426,6 @@ else
         {
             isLoading = false;
         }
-    }
-
-    private void SetActiveTab(string tab)
-    {
-        activeTab = tab;
-        message = string.Empty;
-        passwordMessage = string.Empty;
     }
 
     private async Task SaveProfile()
@@ -672,6 +778,136 @@ else
             Console.WriteLine($"Upload error: {ex.Message}");
             Console.WriteLine($"Stack trace: {ex.StackTrace}");
             return false;
+        }
+    }
+
+    private async Task LoadUserPosts()
+    {
+        Console.WriteLine("🔥 LoadUserPosts: Starting...");
+        
+        if (currentUser == null)
+        {
+            Console.WriteLine("❌ LoadUserPosts: currentUser is null!");
+            return;
+        }
+        
+        Console.WriteLine($"✅ LoadUserPosts: currentUser exists, UserId = {currentUser.UserId}");
+        
+        isLoadingPosts = true;
+        try
+        {
+            Console.WriteLine($"📡 LoadUserPosts: Calling postService.GetPostsByUserIdAsync({currentUser.UserId})");
+            userPosts = await postService.GetPostsByUserIdAsync(currentUser.UserId);
+            Console.WriteLine($"📦 LoadUserPosts: Received {userPosts?.Count ?? 0} posts");
+            
+            // Fix URLs for images
+            foreach (var post in userPosts)
+            {
+                if (!string.IsNullOrEmpty(post.ImageUrl) && !post.ImageUrl.StartsWith("/uploads/"))
+                {
+                    string fullRelativeUrl = $"/uploads/posts/{post.ImageUrl}";
+                    post.ImageUrl = $"http://localhost:5000{fullRelativeUrl}";
+                    Console.WriteLine($"🖼️ LoadUserPosts: Fixed image URL to: {post.ImageUrl}");
+                }
+                else if (!string.IsNullOrEmpty(post.ImageUrl) && post.ImageUrl.StartsWith("/") && !post.ImageUrl.StartsWith("http"))
+                {
+                    post.ImageUrl = $"http://localhost:5000{post.ImageUrl}";
+                    Console.WriteLine($"🖼️ LoadUserPosts: Fixed relative URL to: {post.ImageUrl}");
+                }
+            }
+            
+            Console.WriteLine($"✅ LoadUserPosts: Successfully loaded {userPosts.Count} posts");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ LoadUserPosts: Error loading user posts: {ex.Message}");
+            Console.WriteLine($"❌ LoadUserPosts: Stack trace: {ex.StackTrace}");
+            Console.WriteLine($"❌ LoadUserPosts: Inner exception: {ex.InnerException?.Message}");
+        }
+        finally
+        {
+            isLoadingPosts = false;
+            Console.WriteLine($"🏁 LoadUserPosts: Finished, isLoadingPosts = {isLoadingPosts}");
+            StateHasChanged(); // Force UI re-render
+        }
+    }
+
+    private void SetActiveTab(string tab)
+    {
+        activeTab = tab;
+        message = string.Empty;
+        passwordMessage = string.Empty;
+        
+        // Load posts when switching to posts tab
+        if (tab == "posts")
+        {
+            LoadUserPosts();
+        }
+    }
+
+    private async Task OpenPostModal(Post post)
+    {
+        selectedPost = post;
+        comments = await commentService.GetCommentsByPostAsync(post.PostId);
+        IsPostModalOpen = true;
+    }
+
+    private Task OnPostVisibleChanged(bool visible)
+    {
+        IsPostModalOpen = visible;
+        return Task.CompletedTask;
+    }
+
+    private Task ClosePostModal()
+    {
+        comments.Clear();
+        selectedPost = null;
+        return Task.CompletedTask;
+    }
+
+    private async Task FetchAndUpdateUserId()
+    {
+        try
+        {
+            Console.WriteLine("📡 FetchAndUpdateUserId: Calling API /api/users/profile");
+            using var httpClient = new HttpClient();
+            httpClient.BaseAddress = new Uri("http://localhost:5000");
+            
+            if (!await tokenManager.EnsureTokenIsSetAsync(httpClient))
+            {
+                Console.WriteLine("❌ FetchAndUpdateUserId: No valid token");
+                return;
+            }
+            
+            var response = await httpClient.GetAsync("api/users/profile");
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"📡 FetchAndUpdateUserId: Response = {content}");
+                
+                // Parse JSON manually to get userId
+                using var doc = System.Text.Json.JsonDocument.Parse(content);
+                if (doc.RootElement.TryGetProperty("userId", out var userIdElement))
+                {
+                    var userId = userIdElement.GetInt32();
+                    Console.WriteLine($"✅ FetchAndUpdateUserId: Got userId from JSON = {userId}");
+                    
+                    if (userId > 0)
+                    {
+                        currentUser.UserId = userId;
+                        await authService.UpdateLocalUserInfo(currentUser);
+                        Console.WriteLine($"✅ FetchAndUpdateUserId: Updated localStorage with UserId = {userId}");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"❌ FetchAndUpdateUserId: No userId field in response!");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ FetchAndUpdateUserId: Error = {ex.Message}");
         }
     }
 

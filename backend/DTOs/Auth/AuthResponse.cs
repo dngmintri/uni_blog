@@ -33,4 +33,6 @@ public class AuthResponse
     
     [JsonPropertyName("gender")]
     public string? Gender { get; set; }
+    [JsonPropertyName("userId")]
+    public int UserId { get; set; }
 }

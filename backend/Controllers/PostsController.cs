@@ -33,7 +33,9 @@ public class PostsController : ControllerBase
     [HttpGet("user/{userId}")]
     public async Task<ActionResult<IEnumerable<PostDto>>> GetByUserId(int userId)
     {
+        Console.WriteLine($"🔄 PostsController.GetByUserId: Called with userId = {userId}");
         var posts = await _posts.GetByUserIdAsync(userId);
+        Console.WriteLine($"📦 PostsController.GetByUserId: Got {posts.Count()} posts");
         return Ok(posts);
     }
 
