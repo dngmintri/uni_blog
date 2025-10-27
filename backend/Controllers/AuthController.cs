@@ -31,9 +31,17 @@ public class AuthController : ControllerBase
     public async Task<ActionResult<AuthResponse>> Login([FromBody] LoginRequest req)
     {
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
-        var res = await _auth.LoginAsync(req);
-        if (res is null) return Unauthorized("Invalid credentials");
-        return Ok(res);
+        
+        try
+        {
+            var res = await _auth.LoginAsync(req);
+            if (res is null) return Unauthorized(new { message = "Tên đăng nhập hoặc mật khẩu không đúng" });
+            return Ok(res);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new { message = ex.Message });
+        }
     }
 
     [HttpGet("test-users")]
@@ -65,8 +73,16 @@ public class AuthController : ControllerBase
     public async Task<ActionResult<AuthResponse>> Refresh([FromBody] RefreshTokenRequest req)
     {
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
-        var res = await _auth.RefreshTokenAsync(req.RefreshToken);
-        if (res is null) return Unauthorized("Invalid refresh token");
-        return Ok(res);
+        
+        try
+        {
+            var res = await _auth.RefreshTokenAsync(req.RefreshToken);
+            if (res is null) return Unauthorized(new { message = "Token không hợp lệ hoặc đã hết hạn" });
+            return Ok(res);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new { message = ex.Message });
+        }
     }
 }
