@@ -12,9 +12,7 @@ public class PostRepository : IPostRepository
 
 	public async Task<(IEnumerable<Post> items, int total)> GetPagedAsync(int page, int pageSize, bool? published)
 	{
-		var query = _db.Posts.AsNoTracking();
-		if (published.HasValue)
-			query = query.Where(p => p.IsPublished == published.Value);
+		var query = _db.Posts.AsNoTracking().Where(p => !p.IsDeleted);
 
 		var total = await query.CountAsync();
 		var items = await query
@@ -28,14 +26,15 @@ public class PostRepository : IPostRepository
 	}
 
 	public Task<Post?> GetByIdWithUserAsync(int id) =>
-		_db.Posts.Include(p => p.User).FirstOrDefaultAsync(p => p.PostId == id);
+		_db.Posts.Where(p => !p.IsDeleted).Include(p => p.User).FirstOrDefaultAsync(p => p.PostId == id);
 
 	public Task<Post?> GetByIdAsync(int id) =>
-		_db.Posts.FirstOrDefaultAsync(p => p.PostId == id);
+		_db.Posts.Where(p => !p.IsDeleted).FirstOrDefaultAsync(p => p.PostId == id);
 
 	public async Task<IEnumerable<Post>> GetAllAsync()
 	{
 		return await _db.Posts
+			.Where(p => !p.IsDeleted)
 			.Include(p => p.User)
 			.OrderByDescending(p => p.CreatedAt)
 			.ToListAsync();
@@ -46,7 +45,7 @@ public class PostRepository : IPostRepository
 		Console.WriteLine($"🔄 PostRepository.GetByUserIdAsync: Querying for userId = {userId}");
 		var posts = await _db.Posts
 			.Include(p => p.User)
-			.Where(p => p.UserId == userId && !p.IsDeleted && p.IsPublished)
+			.Where(p => p.UserId == userId && !p.IsDeleted)
 			.OrderByDescending(p => p.CreatedAt)
 			.ToListAsync();
 		Console.WriteLine($"📦 PostRepository.GetByUserIdAsync: Found {posts.Count} posts");
@@ -66,7 +65,8 @@ public class PostRepository : IPostRepository
 		var post = await _db.Posts.FindAsync(id);
 		if (post != null)
 		{
-			_db.Posts.Remove(post);
+			post.IsDeleted = true;
+			post.UpdatedAt = DateTime.Now;
 			await _db.SaveChangesAsync();
 		}
 	}

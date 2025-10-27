@@ -9,8 +9,6 @@ public class PostDto
     public string? ImageUrl { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
-    public int Views { get; set; }
-    public bool IsPublished { get; set; }
     public bool IsDeleted { get; set; }
     public string? AuthorName { get; set; }
     public string? AuthorAvatarUrl { get; set; }

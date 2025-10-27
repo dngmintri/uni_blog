@@ -1,5 +1,7 @@
 @using frontend.Services
+@using Blazorise
 @inject IAdminService adminService
+@inject IUploadService uploadService
 
 <div class="post-management">
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -31,9 +33,6 @@
                         <th>ID</th>
                         <th>Tiêu đề</th>
                         <th>Tác giả</th>
-                        <th>Trạng thái</th>
-                        <th>Lượt xem</th>
-                        <th>Lượt thích</th>
                         <th>Ngày tạo</th>
                         <th>Thao tác</th>
                     </tr>
@@ -58,19 +57,6 @@
                                     <small class="text-muted">@post.AuthorEmail</small>
                                 </div>
                             </td>
-                            <td>
-                                <Badge Color="@(post.IsPublished ? Color.Success : Color.Warning)">
-                                    @(post.IsPublished ? "Đã xuất bản" : "Bản nháp")
-                                </Badge>
-                            </td>
-                            <td>
-                                <Blazorise.Icons.FontAwesome.Icon Name="IconName.Eye" class="me-1" />
-                                @post.ViewCount
-                            </td>
-                            <td>
-                                <Blazorise.Icons.FontAwesome.Icon Name="IconName.Heart" class="me-1" />
-                                @post.LikeCount
-                            </td>
                             <td>@post.CreatedAt.ToString("dd/MM/yyyy")</td>
                             <td>
                                 <div class="btn-group btn-group-sm">
@@ -79,9 +65,6 @@
                                     </Button>
                                     <Button Color="Color.Warning" @onclick="() => EditPost(post)">
                                         <Blazorise.Icons.FontAwesome.Icon Name="IconName.Edit" />
-                                    </Button>
-                                    <Button Color="Color.Success" @onclick="() => TogglePostStatus(post)">
-                                        <Blazorise.Icons.FontAwesome.Icon Name="@(post.IsPublished ? IconName.EyeSlash : IconName.Eye)" />
                                     </Button>
                                     <Button Color="Color.Danger" @onclick="() => DeletePost(post)">
                                         <Blazorise.Icons.FontAwesome.Icon Name="IconName.Times" />
@@ -126,13 +109,16 @@
                             @viewingPost.CreatedAt.ToString("dd/MM/yyyy HH:mm")
                         </small>
                         <br>
-                        <small class="text-muted">
-                            <Blazorise.Icons.FontAwesome.Icon Name="IconName.Eye" class="me-1" />
-                            @viewingPost.ViewCount lượt xem
-                            <Blazorise.Icons.FontAwesome.Icon Name="IconName.Heart" class="ms-2 me-1" />
-                            @viewingPost.LikeCount lượt thích
-                        </small>
                     </div>
+                    @if (!string.IsNullOrEmpty(viewingPost.ImageUrl))
+                    {
+                        <div class="post-image mb-3">
+                            <img src="@GetFullImageUrl(viewingPost.ImageUrl)" 
+                                 alt="@viewingPost.Title" 
+                                 class="img-fluid rounded" 
+                                 onerror="this.style.display='none'" />
+                        </div>
+                    }
                     <div class="post-content">
                         @((MarkupString)viewingPost.Content)
                     </div>
@@ -169,9 +155,25 @@
                     </Field>
                     
                     <Field>
-                        <Check TValue="bool" @bind-Checked="editingPost.IsPublished">
-                            Đã xuất bản
-                        </Check>
+                        <FieldLabel>Ảnh bài viết</FieldLabel>
+                        @if (!string.IsNullOrEmpty(editingPost.ImageUrl))
+                        {
+                            <div class="mb-2">
+                                <img src="@GetFullImageUrl(editingPost.ImageUrl)" 
+                                     alt="Current Image" 
+                                     class="img-thumbnail" 
+                                     style="max-width: 300px; max-height: 200px;" 
+                                     onerror="this.style.display='none'; this.parentElement.innerHTML='<small class=\'text-muted\'>Ảnh cũ không tồn tại</small>'" />
+                            </div>
+                        }
+                        <FileEdit Multiple="false" Accept=".jpg,.jpeg,.png,.gif" Changed="OnFileSelected" />
+                        @if (isUploadingImage)
+                        {
+                            <div class="text-info mt-2">
+                                <span class="spinner-border spinner-border-sm me-2"></span>
+                                Đang tải ảnh lên...
+                            </div>
+                        }
                     </Field>
                 </EditForm>
             }
@@ -211,10 +213,37 @@
         border: 1px solid #dee2e6;
     }
 
+    .table {
+        table-layout: fixed;
+        width: 100%;
+    }
+
     .table th {
         background-color: #f8f9fa;
         border-bottom: 2px solid #dee2e6;
         font-weight: 600;
+    }
+
+    .table th:nth-child(1) { width: 8%; }   /* ID */
+    .table th:nth-child(2) { width: 35%; }  /* Title */
+    .table th:nth-child(3) { width: 25%; }  /* Author */
+    .table th:nth-child(4) { width: 12%; }  /* Created Date */
+    .table th:nth-child(5) { width: 20%; }  /* Actions */
+
+    .table td {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: middle;
+    }
+
+    .table td:nth-child(2) { /* Title column */
+        white-space: normal;
+        word-wrap: break-word;
+    }
+
+    .table td:nth-child(5) { /* Actions column */
+        text-align: center;
     }
 
     .post-view {
@@ -233,12 +262,22 @@
 </style>
 
 @code {
+    private const string BackendBaseUrl = "http://localhost:5000";
     private List<PostInfo> posts = new();
     private bool isLoading = true;
+    private bool isUploadingImage = false;
     private Modal? viewPostModal;
     private Modal? editPostModal;
     private PostInfo? viewingPost;
     private PostInfo? editingPost;
+    private IFileEntry? selectedImageFile;
+
+    private string GetFullImageUrl(string? imageUrl)
+    {
+        if (string.IsNullOrEmpty(imageUrl)) return "";
+        if (imageUrl.StartsWith("http://") || imageUrl.StartsWith("https://")) return imageUrl;
+        return $"{BackendBaseUrl}{imageUrl}";
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -277,13 +316,11 @@
             Id = post.Id,
             Title = post.Title,
             Content = post.Content,
+            ImageUrl = post.ImageUrl,
             AuthorName = post.AuthorName,
             AuthorEmail = post.AuthorEmail,
             CreatedAt = post.CreatedAt,
-            UpdatedAt = post.UpdatedAt,
-            IsPublished = post.IsPublished,
-            ViewCount = post.ViewCount,
-            LikeCount = post.LikeCount
+            UpdatedAt = post.UpdatedAt
         };
         editPostModal?.Show();
     }
@@ -294,26 +331,44 @@
         editingPost = null;
     }
 
+    private void OnFileSelected(FileChangedEventArgs e)
+    {
+        selectedImageFile = e.Files.FirstOrDefault();
+    }
+
     private async Task SavePost()
     {
-        if (editingPost != null)
+        if (editingPost == null) return;
+
+        try
         {
+            // Upload ảnh mới nếu có chọn
+            if (selectedImageFile != null)
+            {
+                isUploadingImage = true;
+                StateHasChanged();
+                
+                var imageUrl = await uploadService.UploadImageAsync(selectedImageFile);
+                if (!string.IsNullOrEmpty(imageUrl))
+                {
+                    editingPost.ImageUrl = imageUrl;
+                }
+                
+                isUploadingImage = false;
+            }
+
             var success = await adminService.UpdatePostAsync(editingPost.Id, editingPost);
             if (success)
             {
+                selectedImageFile = null;
                 await LoadPosts();
                 CloseEditModal();
             }
         }
-    }
-
-    private async Task TogglePostStatus(PostInfo post)
-    {
-        post.IsPublished = !post.IsPublished;
-        var success = await adminService.UpdatePostAsync(post.Id, post);
-        if (success)
+        catch (Exception ex)
         {
-            await LoadPosts();
+            Console.WriteLine($"Error saving post: {ex.Message}");
+            isUploadingImage = false;
         }
     }
 

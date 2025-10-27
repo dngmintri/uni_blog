@@ -57,10 +57,17 @@ public class AdminService : BaseAuthenticatedService, IAdminService
 
     public async Task<bool> UpdatePostAsync(int postId, PostInfo postInfo)
     {
-        var json = JsonSerializer.Serialize(postInfo, _jsonOptions);
+        var updateRequest = new
+        {
+            Title = postInfo.Title,
+            Content = postInfo.Content,
+            ImageUrl = postInfo.ImageUrl
+        };
+        
+        var json = JsonSerializer.Serialize(updateRequest, _jsonOptions);
         var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-        return await ExecuteAuthenticatedRequestWithContentAsync(postInfo, () => 
+        return await ExecuteAuthenticatedRequestWithContentAsync(updateRequest, () => 
             _httpClient.PutAsync($"api/admin/posts/{postId}", content));
     }
 
@@ -97,13 +104,11 @@ public class PostInfo
     public int Id { get; set; }
     public string Title { get; set; } = string.Empty;
     public string Content { get; set; } = string.Empty;
+    public string? ImageUrl { get; set; }
     public string AuthorName { get; set; } = string.Empty;
     public string AuthorEmail { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
-    public bool IsPublished { get; set; } = true;
-    public int ViewCount { get; set; }
-    public int LikeCount { get; set; }
 }
 
 public class AdminStats
