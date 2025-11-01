@@ -32,8 +32,6 @@ public class PostService : IPostService
 			ImageUrl = p.ImageUrl,
 			CreatedAt = p.CreatedAt,
 			UpdatedAt = p.UpdatedAt,
-			Views = p.Views,
-			IsPublished = p.IsPublished,
 			IsDeleted = p.IsDeleted,
 			AuthorName = p.User?.FullName,
 			AuthorAvatarUrl = p.User?.AvatarUrl
@@ -47,9 +45,6 @@ public class PostService : IPostService
 		var post = await _posts.GetByIdWithUserAsync(id);
 		if (post is null) return null;
 
-		post.Views += 1;
-		await _posts.SaveChangesAsync();
-
 		return new PostDto
 		{
 			PostId = post.PostId,
@@ -59,8 +54,6 @@ public class PostService : IPostService
 			ImageUrl = post.ImageUrl,
 			CreatedAt = post.CreatedAt,
 			UpdatedAt = post.UpdatedAt,
-			Views = post.Views,
-			IsPublished = post.IsPublished,
 			IsDeleted = post.IsDeleted,
 			AuthorName = post.User?.FullName,
 			AuthorAvatarUrl = post.User?.AvatarUrl
@@ -76,8 +69,6 @@ public class PostService : IPostService
 			Content = req.Content,
 			ImageUrl = req.ImageUrl,
 			CreatedAt = DateTime.Now,
-			Views = 0,
-			IsPublished = true,
 			IsDeleted = false
 		};
 		await _posts.AddAsync(entity);
@@ -93,8 +84,6 @@ public class PostService : IPostService
 			ImageUrl = entity.ImageUrl,
 			CreatedAt = entity.CreatedAt,
 			UpdatedAt = entity.UpdatedAt,
-			Views = entity.Views,
-			IsPublished = entity.IsPublished,
 			IsDeleted = entity.IsDeleted,
 			AuthorName = user?.FullName
 		};
@@ -110,7 +99,6 @@ public class PostService : IPostService
 		entity.Title = req.Title;
 		entity.Content = req.Content;
 		entity.ImageUrl = req.ImageUrl;
-		entity.IsPublished = req.IsPublished;
 		entity.UpdatedAt = DateTime.Now;
 
 		await _posts.SaveChangesAsync();
@@ -144,8 +132,6 @@ public class PostService : IPostService
 			ImageUrl = p.ImageUrl,
 			CreatedAt = p.CreatedAt,
 			UpdatedAt = p.UpdatedAt,
-			Views = p.Views,
-			IsPublished = p.IsPublished,
 			IsDeleted = p.IsDeleted,
 			AuthorName = p.User?.FullName,
 			AuthorAvatarUrl = p.User?.AvatarUrl

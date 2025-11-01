@@ -48,45 +48,51 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponse?> LoginAsync(LoginRequest request)
     {
-        try
-        {
-            Console.WriteLine($"AuthService: Attempting login for {request.Username}");
-            
-            var json = JsonSerializer.Serialize(request, _jsonOptions);
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
+        Console.WriteLine($"AuthService: Attempting login for {request.Username}");
+        
+        var json = JsonSerializer.Serialize(request, _jsonOptions);
+        var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var response = await _httpClient.PostAsync("api/auth/login", content);
-            Console.WriteLine($"AuthService: Response status: {response.StatusCode}");
-            
-            if (response.IsSuccessStatusCode)
-            {
-                var responseContent = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"AuthService: Response content: {responseContent}");
-                
-                var authResponse = JsonSerializer.Deserialize<AuthResponse>(responseContent, _jsonOptions);
-                Console.WriteLine($"AuthService: Deserialized response: {authResponse?.Username}");
-                Console.WriteLine($"AuthService: RefreshToken received: {authResponse?.RefreshToken?.Substring(0, 20)}...");
-                
-                if (authResponse != null)
-                {
-                    await _authStateProvider.MarkUserAsAuthenticated(authResponse);
-                    Console.WriteLine("AuthService: User marked as authenticated");
-                }
-                
-                return authResponse;
-            }
-            else
-            {
-                var errorContent = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"AuthService: Error response: {errorContent}");
-            }
-            
-            return null;
-        }
-        catch (Exception ex)
+        var response = await _httpClient.PostAsync("api/auth/login", content);
+        Console.WriteLine($"AuthService: Response status: {response.StatusCode}");
+        
+        if (response.IsSuccessStatusCode)
         {
-            Console.WriteLine($"AuthService: Exception: {ex.Message}");
-            return null;
+            var responseContent = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"AuthService: Response content: {responseContent}");
+            
+            var authResponse = JsonSerializer.Deserialize<AuthResponse>(responseContent, _jsonOptions);
+            Console.WriteLine($"AuthService: Deserialized response: {authResponse?.Username}");
+            Console.WriteLine($"AuthService: RefreshToken received: {authResponse?.RefreshToken?.Substring(0, 20)}...");
+            
+            if (authResponse != null)
+            {
+                await _authStateProvider.MarkUserAsAuthenticated(authResponse);
+                Console.WriteLine("AuthService: User marked as authenticated");
+            }
+            
+            return authResponse;
+        }
+        else
+        {
+            var errorContent = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"AuthService: Error response: {errorContent}");
+            
+            // Parse error message from backend
+            try
+            {
+                var errorResponse = JsonSerializer.Deserialize<ErrorResponse>(errorContent, _jsonOptions);
+                if (!string.IsNullOrEmpty(errorResponse?.Message))
+                {
+                    throw new Exception(errorResponse.Message);
+                }
+            }
+            catch (JsonException)
+            {
+                // If can't parse, throw generic error
+            }
+            
+            throw new Exception("Tên đăng nhập hoặc mật khẩu không đúng");
         }
     }
 

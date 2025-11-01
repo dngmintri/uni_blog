@@ -93,11 +93,11 @@ public class AdminController : ControllerBase
                 Id = p.PostId,
                 Title = p.Title,
                 Content = p.Content,
+                ImageUrl = p.ImageUrl,
                 AuthorId = p.UserId,
                 AuthorName = p.User?.FullName ?? "Unknown",
                 CreatedAt = p.CreatedAt,
-                UpdatedAt = p.UpdatedAt,
-                IsPublished = p.IsPublished
+                UpdatedAt = p.UpdatedAt
             }).ToList();
 
             return Ok(adminPosts);
@@ -109,14 +109,18 @@ public class AdminController : ControllerBase
     }
 
     [HttpPut("posts/{postId}")]
-    public async Task<ActionResult> UpdatePost(int postId, [FromBody] object request)
+    public async Task<ActionResult> UpdatePost(int postId, [FromBody] AdminPostUpdateRequest request)
     {
         try
         {
             var post = await _postRepository.GetByIdAsync(postId);
             if (post == null) return NotFound();
 
-            // Có thể thêm logic update post ở đây
+            post.Title = request.Title;
+            post.Content = request.Content;
+            post.ImageUrl = request.ImageUrl;
+            post.UpdatedAt = DateTime.Now;
+
             await _postRepository.UpdateAsync(post);
             return Ok();
         }

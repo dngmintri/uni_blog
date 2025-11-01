@@ -47,10 +47,17 @@ public class AdminService : BaseAuthenticatedService, IAdminService
 
     public async Task<bool> UpdatePostAsync(int postId, PostInfo postInfo)
     {
-        var json = JsonSerializer.Serialize(postInfo, _jsonOptions);
+        var updateRequest = new
+        {
+            Title = postInfo.Title,
+            Content = postInfo.Content,
+            ImageUrl = postInfo.ImageUrl
+        };
+        
+        var json = JsonSerializer.Serialize(updateRequest, _jsonOptions);
         var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-        return await ExecuteAuthenticatedRequestWithContentAsync(postInfo, () => 
+        return await ExecuteAuthenticatedRequestWithContentAsync(updateRequest, () => 
             _httpClient.PutAsync($"api/admin/posts/{postId}", content));
     }
 
