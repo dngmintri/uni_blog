@@ -10,11 +10,10 @@ public class PostRepository : IPostRepository
 	private readonly BlogDbContext _db;
 	public PostRepository(BlogDbContext db) => _db = db;
 
-	public async Task<(IEnumerable<Post> items, int total)> GetPagedAsync(int page, int pageSize, bool? published)
+	public async Task<(IEnumerable<Post> items, int total)> GetPagedAsync(int page, int pageSize)
 	{
-		var query = _db.Posts.AsNoTracking();
-		if (published.HasValue)
-			query = query.Where(p => p.IsPublished == published.Value);
+		var query = _db.Posts.AsNoTracking()
+			.Where(p => !p.IsDeleted);
 
 		var total = await query.CountAsync();
 		var items = await query
@@ -37,6 +36,7 @@ public class PostRepository : IPostRepository
 	{
 		return await _db.Posts
 			.Include(p => p.User)
+			.Where(p => !p.IsDeleted)
 			.OrderByDescending(p => p.CreatedAt)
 			.ToListAsync();
 	}
@@ -46,7 +46,7 @@ public class PostRepository : IPostRepository
 		Console.WriteLine($"🔄 PostRepository.GetByUserIdAsync: Querying for userId = {userId}");
 		var posts = await _db.Posts
 			.Include(p => p.User)
-			.Where(p => p.UserId == userId && !p.IsDeleted && p.IsPublished)
+			.Where(p => p.UserId == userId && !p.IsDeleted)
 			.OrderByDescending(p => p.CreatedAt)
 			.ToListAsync();
 		Console.WriteLine($"📦 PostRepository.GetByUserIdAsync: Found {posts.Count} posts");

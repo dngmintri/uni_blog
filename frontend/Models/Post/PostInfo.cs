@@ -9,7 +9,4 @@ public class PostInfo
     public string AuthorEmail { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
-    public bool IsPublished { get; set; } = true;
-    public int ViewCount { get; set; }
-    public int LikeCount { get; set; }
 }

@@ -61,8 +61,6 @@ namespace backend.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    Views = table.Column<int>(type: "int", nullable: false),
-                    IsPublished = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     IsDeleted = table.Column<bool>(type: "tinyint(1)", nullable: false)
                 },
                 constraints: table =>

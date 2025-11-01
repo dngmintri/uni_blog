@@ -46,7 +46,7 @@ public class AuthService : IAuthService
         }
     }
 
-    public async Task<AuthResponse?> LoginAsync(LoginRequest request)
+    public async Task<(AuthResponse? result, string? errorMessage)> LoginAsync(LoginRequest request)
     {
         try
         {
@@ -73,20 +73,20 @@ public class AuthService : IAuthService
                     Console.WriteLine("AuthService: User marked as authenticated");
                 }
                 
-                return authResponse;
+                return (authResponse, null);
             }
             else
             {
                 var errorContent = await response.Content.ReadAsStringAsync();
                 Console.WriteLine($"AuthService: Error response: {errorContent}");
+                // Trả về error message từ response
+                return (null, errorContent.Trim('"'));
             }
-            
-            return null;
         }
         catch (Exception ex)
         {
             Console.WriteLine($"AuthService: Exception: {ex.Message}");
-            return null;
+            return (null, $"Lỗi đăng nhập: {ex.Message}");
         }
     }
 
