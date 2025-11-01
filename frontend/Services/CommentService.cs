@@ -3,7 +3,6 @@ using System.Text;
 using System.Text.Json;
 
 namespace frontend.Services;
-
 public class CommentService : BaseAuthenticatedService
 {
     public CommentService(HttpClient httpClient, ITokenManagerService tokenManager) 

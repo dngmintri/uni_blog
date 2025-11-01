@@ -34,7 +34,7 @@ public class AuthController : ControllerBase
         try
         {
             var res = await _auth.LoginAsync(req);
-            if (res is null) return Unauthorized("Invalid credentials");
+            if (res is null) return Unauthorized("Tài khoản hoặc mật khẩu không chính xác");
             return Ok(res);
         }
         catch (UnauthorizedAccessException ex) when (ex.Message == "ACCOUNT_DEACTIVATED")
@@ -43,7 +43,7 @@ public class AuthController : ControllerBase
         }
         catch
         {
-            return Unauthorized("Invalid credentials");
+            return Unauthorized("Tài khoản hoặc mật khẩu không chính xác");
         }
     }
 
