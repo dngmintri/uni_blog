@@ -31,9 +31,20 @@ public class AuthController : ControllerBase
     public async Task<ActionResult<AuthResponse>> Login([FromBody] LoginRequest req)
     {
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
-        var res = await _auth.LoginAsync(req);
-        if (res is null) return Unauthorized("Invalid credentials");
-        return Ok(res);
+        try
+        {
+            var res = await _auth.LoginAsync(req);
+            if (res is null) return Unauthorized("Invalid credentials");
+            return Ok(res);
+        }
+        catch (UnauthorizedAccessException ex) when (ex.Message == "ACCOUNT_DEACTIVATED")
+        {
+            return Unauthorized("Tài khoản đã bị dừng hoạt động");
+        }
+        catch
+        {
+            return Unauthorized("Invalid credentials");
+        }
     }
 
     [HttpGet("test-users")]

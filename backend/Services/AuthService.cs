@@ -54,15 +54,16 @@ public class AuthService : IAuthService
 
 		var (token, exp) = _jwt.CreateToken(user);
 		var refreshToken = _jwt.CreateRefreshToken(user);
-		return new AuthResponse { 
-			AccessToken = token, 
+		return new AuthResponse
+		{
+			AccessToken = token,
 			RefreshToken = refreshToken,
-			ExpiresAt = exp, 
+			ExpiresAt = exp,
 			UserId = user.UserId,
-			Username = user.Username, 
+			Username = user.Username,
 			Email = user.Email,
 			FullName = user.FullName,
-			Role = user.Role.ToString(), 
+			Role = user.Role.ToString(),
 			AvatarUrl = user.AvatarUrl,
 			DateOfBirth = user.DateOfBirth,
 			Gender = user.Gender
@@ -72,7 +73,7 @@ public class AuthService : IAuthService
 	public async Task<AuthResponse?> LoginAsync(LoginRequest req)
 	{
 		Console.WriteLine($"Login attempt for: {req.Username}");
-		
+
 		// Tìm user bằng username hoặc email
 		var user = await _users.GetByUsernameAsync(req.Username);
 		if (user == null)
@@ -89,17 +90,24 @@ public class AuthService : IAuthService
 		{
 			Console.WriteLine($"User found by username: {req.Username}");
 		}
-		
+
 		if (user is null)
 		{
 			Console.WriteLine("User not found");
 			return null;
 		}
-		
+
+		// Kiểm tra user có active không
+		if (!user.IsActive)
+		{
+			Console.WriteLine("User is not active");
+			throw new UnauthorizedAccessException("ACCOUNT_DEACTIVATED");
+		}
+
 		Console.WriteLine($"Checking password for user: {user.Username}");
 		var passwordValid = BCrypt.Net.BCrypt.Verify(req.Password, user.PasswordHash);
 		Console.WriteLine($"Password valid: {passwordValid}");
-		
+
 		if (!passwordValid)
 		{
 			Console.WriteLine("Invalid password");
@@ -112,15 +120,16 @@ public class AuthService : IAuthService
 		var (token, exp) = _jwt.CreateToken(user);
 		var refreshToken = _jwt.CreateRefreshToken(user);
 		Console.WriteLine($"Login successful for user: {user.Username}");
-		return new AuthResponse { 
-			AccessToken = token, 
+		return new AuthResponse
+		{
+			AccessToken = token,
 			RefreshToken = refreshToken,
-			ExpiresAt = exp, 
+			ExpiresAt = exp,
 			UserId = user.UserId,
-			Username = user.Username, 
+			Username = user.Username,
 			Email = user.Email,
 			FullName = user.FullName,
-			Role = user.Role.ToString(), 
+			Role = user.Role.ToString(),
 			AvatarUrl = user.AvatarUrl,
 			DateOfBirth = user.DateOfBirth,
 			Gender = user.Gender
@@ -139,18 +148,25 @@ public class AuthService : IAuthService
 			var user = await _users.GetByIdAsync(userId.Value);
 			if (user == null) return null;
 
+			// Kiểm tra user có active không
+			if (!user.IsActive)
+			{
+				Console.WriteLine("User is not active");
+				return null;
+			}
+			
 			var (token, exp) = _jwt.CreateToken(user);
 			var newRefreshToken = _jwt.CreateRefreshToken(user);
-			return new AuthResponse 
-			{ 
-				AccessToken = token, 
+			return new AuthResponse
+			{
+				AccessToken = token,
 				RefreshToken = newRefreshToken,
-				ExpiresAt = exp, 
+				ExpiresAt = exp,
 				UserId = user.UserId,
-				Username = user.Username, 
+				Username = user.Username,
 				Email = user.Email,
 				FullName = user.FullName,
-				Role = user.Role.ToString(), 
+				Role = user.Role.ToString(),
 				AvatarUrl = user.AvatarUrl,
 				DateOfBirth = user.DateOfBirth,
 				Gender = user.Gender
