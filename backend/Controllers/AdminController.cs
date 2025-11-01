@@ -1,6 +1,7 @@
 using Backend.DTOs.Auth;
 using Backend.DTOs.Admin;
 using Backend.Repositories.Interfaces;
+using Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -14,11 +15,13 @@ public class AdminController : ControllerBase
 {
     private readonly IUserRepository _userRepository;
     private readonly IPostRepository _postRepository;
+    private readonly IPostService _postService;
 
-    public AdminController(IUserRepository userRepository, IPostRepository postRepository)
+    public AdminController(IUserRepository userRepository, IPostRepository postRepository, IPostService postService)
     {
         _userRepository = userRepository;
         _postRepository = postRepository;
+        _postService = postService;
     }
 
     [HttpGet("users")]
@@ -107,34 +110,29 @@ public class AdminController : ControllerBase
         }
     }
 
-    [HttpPut("posts/{postId}")]
-    public async Task<ActionResult> UpdatePost(int postId, [FromBody] object request)
-    {
-        try
-        {
-            var post = await _postRepository.GetByIdAsync(postId);
-            if (post == null) return NotFound();
-
-            // Có thể thêm logic update post ở đây
-            await _postRepository.UpdateAsync(post);
-            return Ok();
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { message = $"Lỗi: {ex.Message}" });
-        }
-    }
-
     [HttpDelete("posts/{postId}")]
     public async Task<ActionResult> DeletePost(int postId)
     {
         try
         {
-            var post = await _postRepository.GetByIdAsync(postId);
-            if (post == null) return NotFound();
+            // Lấy userId từ token (admin có thể xóa bất kỳ post nào)
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                ?? User.FindFirst("sub")?.Value;
+            
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var adminUserId))
+            {
+                return Unauthorized();
+            }
 
-            await _postRepository.DeleteAsync(postId);
-            return Ok();
+            // Sử dụng SoftDeleteAsync từ service - admin có thể xóa bất kỳ post nào
+            var success = await _postService.SoftDeleteAsync(postId, adminUserId, isAdmin: true);
+            
+            if (!success)
+            {
+                return NotFound(new { message = "Không tìm thấy bài viết hoặc không thể xóa" });
+            }
+
+            return Ok(new { message = "Đã xóa bài viết thành công" });
         }
         catch (Exception ex)
         {

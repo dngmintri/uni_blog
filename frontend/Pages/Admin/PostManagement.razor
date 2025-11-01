@@ -62,9 +62,6 @@
                                     <Button Color="Color.Info" @onclick="() => ViewPost(post)">
                                         <Blazorise.Icons.FontAwesome.Icon Name="IconName.Eye" />
                                     </Button>
-                                    <Button Color="Color.Warning" @onclick="() => EditPost(post)">
-                                        <Blazorise.Icons.FontAwesome.Icon Name="IconName.Edit" />
-                                    </Button>
                                     <Button Color="Color.Danger" @onclick="() => DeletePost(post)">
                                         <Blazorise.Icons.FontAwesome.Icon Name="IconName.Times" />
                                     </Button>
@@ -116,38 +113,6 @@
         </ModalBody>
         <ModalFooter>
             <Button Color="Color.Secondary" @onclick="CloseViewModal">Đóng</Button>
-        </ModalFooter>
-    </ModalContent>
-</Modal>
-
-<!-- Edit Post Modal -->
-<Modal @ref="editPostModal" Size="ModalSize.Large">
-    <ModalContent>
-        <ModalHeader>
-            <ModalTitle>Sửa bài viết</ModalTitle>
-            <CloseButton @onclick="CloseEditModal" />
-        </ModalHeader>
-        <ModalBody>
-            @if (editingPost != null)
-            {
-                <EditForm Model="editingPost" OnValidSubmit="SavePost">
-                    <Blazorise.ValidationSummary />
-
-                    <Field>
-                        <FieldLabel>Tiêu đề</FieldLabel>
-                        <TextEdit @bind-Text="editingPost.Title" />
-                    </Field>
-
-                    <Field>
-                        <FieldLabel>Nội dung</FieldLabel>
-                        <TextEdit @bind-Text="editingPost.Content" Rows="10" />
-                    </Field>
-                </EditForm>
-            }
-        </ModalBody>
-        <ModalFooter>
-            <Button Color="Color.Secondary" @onclick="CloseEditModal">Hủy</Button>
-            <Button Color="Color.Primary" @onclick="SavePost">Lưu thay đổi</Button>
         </ModalFooter>
     </ModalContent>
 </Modal>
@@ -205,9 +170,7 @@
     private List<PostInfo> posts = new();
     private bool isLoading = true;
     private Modal? viewPostModal;
-    private Modal? editPostModal;
     private PostInfo? viewingPost;
-    private PostInfo? editingPost;
 
     protected override async Task OnInitializedAsync()
     {
@@ -237,40 +200,6 @@
     {
         viewPostModal?.Hide();
         viewingPost = null;
-    }
-
-    private void EditPost(PostInfo post)
-    {
-        editingPost = new PostInfo
-        {
-            Id = post.Id,
-            Title = post.Title,
-            Content = post.Content,
-            AuthorName = post.AuthorName,
-            AuthorEmail = post.AuthorEmail,
-            CreatedAt = post.CreatedAt,
-            UpdatedAt = post.UpdatedAt,
-        };
-        editPostModal?.Show();
-    }
-
-    private void CloseEditModal()
-    {
-        editPostModal?.Hide();
-        editingPost = null;
-    }
-
-    private async Task SavePost()
-    {
-        if (editingPost != null)
-        {
-            var success = await adminService.UpdatePostAsync(editingPost.Id, editingPost);
-            if (success)
-            {
-                await LoadPosts();
-                CloseEditModal();
-            }
-        }
     }
 
     private async Task DeletePost(PostInfo post)
