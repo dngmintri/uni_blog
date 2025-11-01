@@ -97,7 +97,6 @@ public class AdminController : ControllerBase
                 AuthorName = p.User?.FullName ?? "Unknown",
                 CreatedAt = p.CreatedAt,
                 UpdatedAt = p.UpdatedAt,
-                IsPublished = p.IsPublished
             }).ToList();
 
             return Ok(adminPosts);

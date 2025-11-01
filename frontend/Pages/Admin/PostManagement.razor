@@ -32,9 +32,6 @@
                         <th>ID</th>
                         <th>Tiêu đề</th>
                         <th>Tác giả</th>
-                        <th>Trạng thái</th>
-                        <th>Lượt xem</th>
-                        <th>Lượt thích</th>
                         <th>Ngày tạo</th>
                         <th>Thao tác</th>
                     </tr>
@@ -59,19 +56,6 @@
                                     <small class="text-muted">@post.AuthorEmail</small>
                                 </div>
                             </td>
-                            <td>
-                                <Badge Color="@(post.IsPublished ? Color.Success : Color.Warning)">
-                                    @(post.IsPublished ? "Đã xuất bản" : "Bản nháp")
-                                </Badge>
-                            </td>
-                            <td>
-                                <Blazorise.Icons.FontAwesome.Icon Name="IconName.Eye" class="me-1" />
-                                @post.ViewCount
-                            </td>
-                            <td>
-                                <Blazorise.Icons.FontAwesome.Icon Name="IconName.Heart" class="me-1" />
-                                @post.LikeCount
-                            </td>
                             <td>@post.CreatedAt.ToString("dd/MM/yyyy")</td>
                             <td>
                                 <div class="btn-group btn-group-sm">
@@ -80,9 +64,6 @@
                                     </Button>
                                     <Button Color="Color.Warning" @onclick="() => EditPost(post)">
                                         <Blazorise.Icons.FontAwesome.Icon Name="IconName.Edit" />
-                                    </Button>
-                                    <Button Color="Color.Success" @onclick="() => TogglePostStatus(post)">
-                                        <Blazorise.Icons.FontAwesome.Icon Name="@(post.IsPublished ? IconName.EyeSlash : IconName.Eye)" />
                                     </Button>
                                     <Button Color="Color.Danger" @onclick="() => DeletePost(post)">
                                         <Blazorise.Icons.FontAwesome.Icon Name="IconName.Times" />
@@ -126,13 +107,6 @@
                             <Blazorise.Icons.FontAwesome.Icon Name="IconName.Calendar" class="me-1" />
                             @viewingPost.CreatedAt.ToString("dd/MM/yyyy HH:mm")
                         </small>
-                        <br>
-                        <small class="text-muted">
-                            <Blazorise.Icons.FontAwesome.Icon Name="IconName.Eye" class="me-1" />
-                            @viewingPost.ViewCount lượt xem
-                            <Blazorise.Icons.FontAwesome.Icon Name="IconName.Heart" class="ms-2 me-1" />
-                            @viewingPost.LikeCount lượt thích
-                        </small>
                     </div>
                     <div class="post-content">
                         @((MarkupString)viewingPost.Content)
@@ -158,21 +132,15 @@
             {
                 <EditForm Model="editingPost" OnValidSubmit="SavePost">
                     <Blazorise.ValidationSummary />
-                    
+
                     <Field>
                         <FieldLabel>Tiêu đề</FieldLabel>
                         <TextEdit @bind-Text="editingPost.Title" />
                     </Field>
-                    
+
                     <Field>
                         <FieldLabel>Nội dung</FieldLabel>
                         <TextEdit @bind-Text="editingPost.Content" Rows="10" />
-                    </Field>
-                    
-                    <Field>
-                        <Check TValue="bool" @bind-Checked="editingPost.IsPublished">
-                            Đã xuất bản
-                        </Check>
                     </Field>
                 </EditForm>
             }
@@ -282,9 +250,6 @@
             AuthorEmail = post.AuthorEmail,
             CreatedAt = post.CreatedAt,
             UpdatedAt = post.UpdatedAt,
-            IsPublished = post.IsPublished,
-            ViewCount = post.ViewCount,
-            LikeCount = post.LikeCount
         };
         editPostModal?.Show();
     }
@@ -305,16 +270,6 @@
                 await LoadPosts();
                 CloseEditModal();
             }
-        }
-    }
-
-    private async Task TogglePostStatus(PostInfo post)
-    {
-        post.IsPublished = !post.IsPublished;
-        var success = await adminService.UpdatePostAsync(post.Id, post);
-        if (success)
-        {
-            await LoadPosts();
         }
     }
 

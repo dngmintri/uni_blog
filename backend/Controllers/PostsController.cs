@@ -23,9 +23,9 @@ public class PostsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<PagedResult<PostDto>>> Get([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] bool? published = null)
+    public async Task<ActionResult<PagedResult<PostDto>>> Get([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        var result = await _posts.GetPagedAsync(page, pageSize, published);
+        var result = await _posts.GetPagedAsync(page, pageSize);
         return Ok(result);
     }
 
@@ -42,7 +42,7 @@ public class PostsController : ControllerBase
     [HttpGet("{id:int:min(1)}")]
     public async Task<ActionResult<PostDto>> GetById(int id)
     {
-        var dto = await _posts.GetByIdAndIncreaseViewAsync(id);
+        var dto = await _posts.GetByIdAsync(id);
         if (dto is null) return NotFound();
         return Ok(dto);
     }
