@@ -1,6 +1,6 @@
 @page "/admin"
+@using frontend.Models
 @using frontend.Services
-@using frontend.Components
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Authorization
 @using Blazorise
@@ -20,17 +20,17 @@
                     <div class="mb-3">
                         <i class="fas fa-shield-alt fa-3x text-danger"></i>
                     </div>
-                    <h4 class="alert-heading">🔒 Access Denied</h4>
+                    <h4 class="alert-heading">Access Denied</h4>
                     <p class="mb-3">You need admin privileges to access this page.</p>
                     <hr>
                     <div class="d-flex justify-content-center gap-2">
                         <Button Color="Color.Primary" @onclick="GoHome">
                             <Blazorise.Icons.FontAwesome.Icon Name="IconName.Home" class="me-1" />
-                            🏠 Go Home
+                            Go Home
                         </Button>
                         <Button Color="Color.Secondary" @onclick="GoToLogin">
                             <Blazorise.Icons.FontAwesome.Icon Name="IconName.User" class="me-1" />
-                            🔑 Login
+                            Login
                         </Button>
                     </div>
                 </div>

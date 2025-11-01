@@ -1,3 +1,4 @@
+namespace frontend.Models;
 public class PostsResponse
 {
     public int Total { get; set; }

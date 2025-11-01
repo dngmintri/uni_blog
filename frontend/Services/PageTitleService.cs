@@ -1,6 +1,5 @@
-using System;
-
 namespace frontend.Services
+
 {
     public class PageTitleService
     {

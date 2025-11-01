@@ -1,7 +1,12 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Blazorise;
+using frontend.Models;
+using frontend.Services;
 using Microsoft.JSInterop;
+
+namespace frontend.Services;
+
 public class UploadService : IUploadService
 {
     private readonly IJSRuntime _js;

@@ -36,7 +36,7 @@ else
         <!-- Back Button -->
         <div class="row mb-3">
             <div class="col-12">
-                <Button Color="Color.Light" Size="Size.Small" @onclick="GoBack" class="btn-outline-secondary">
+                <Button Color="Color.Light" Size="Size.Small" @onclick="GoToDashboard" class="btn-outline-secondary">
                     <Blazorise.Icons.FontAwesome.Icon Name="IconName.ArrowLeft" class="me-2" />
                     Quay lại
                 </Button>
@@ -338,7 +338,7 @@ else
     private string activeTab = "info";
     private AuthResponse? currentUser;
     private UserInfo userInfo = new();
-    private PasswordChange passwordChange = new();
+    private PasswordChange passwordChange = new PasswordChange();
     private bool isLoading = true;
     private bool isSaving = false;
     private bool isChangingPassword = false;
@@ -454,7 +454,7 @@ else
             Console.WriteLine($"Sending update request: FullName={userInfo.FullName}, Email={userInfo.Email}, DateOfBirth={userInfo.DateOfBirth}, Gender='{userInfo.Gender}'");
             Console.WriteLine($"Gender type: {userInfo.Gender?.GetType()}, IsNull: {userInfo.Gender == null}, IsEmpty: {string.IsNullOrEmpty(userInfo.Gender)}");
             
-            var serviceUserInfo = new frontend.Services.UserInfo
+            var serviceUserInfo = new UserInfo
             {
                 FullName = userInfo.FullName,
                 Email = userInfo.Email,
@@ -605,11 +605,6 @@ else
         }
         message = string.Empty;
         Console.WriteLine($"Reset form: FullName={userInfo.FullName}, Email={userInfo.Email}, DateOfBirth={userInfo.DateOfBirth}, Gender={userInfo.Gender}");
-    }
-
-    private void GoBack()
-    {
-        navigationManager.NavigateTo("/dashboard");
     }
 
     private void GoToDashboard()
@@ -943,24 +938,6 @@ else
             message = $"Lỗi: {ex.Message}";
             isSuccess = false;
         }
-    }
-
-    public class UserInfo
-    {
-        public string FullName { get; set; } = string.Empty;
-        public string Username { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
-        public string Role { get; set; } = string.Empty;
-        public string? AvatarUrl { get; set; }
-        public DateTime? DateOfBirth { get; set; }
-        public string? Gender { get; set; }
-    }
-
-    public class PasswordChange
-    {
-        public string CurrentPassword { get; set; } = string.Empty;
-        public string NewPassword { get; set; } = string.Empty;
-        public string ConfirmPassword { get; set; } = string.Empty;
     }
 }
 

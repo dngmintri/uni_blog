@@ -1,18 +1,8 @@
 using System.Text;
 using System.Text.Json;
-using Blazored.LocalStorage;
+using frontend.Models;
 
 namespace frontend.Services;
-
-public interface IAdminService
-{
-    Task<List<AdminUserInfo>> GetAllUsersAsync();
-    Task<bool> UpdateUserAsync(int userId, AdminUserInfo userInfo);
-    Task<List<PostInfo>> GetAllPostsAsync();
-    Task<bool> UpdatePostAsync(int postId, PostInfo postInfo);
-    Task<bool> DeletePostAsync(int postId);
-    Task<AdminStats> GetAdminStatsAsync();
-}
 
 public class AdminService : BaseAuthenticatedService, IAdminService
 {
@@ -83,40 +73,4 @@ public class AdminService : BaseAuthenticatedService, IAdminService
             _httpClient.GetAsync("api/admin/stats"));
         return result ?? new AdminStats();
     }
-}
-
-public class AdminUserInfo
-{
-    public int Id { get; set; }
-    public string Username { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
-    public string FullName { get; set; } = string.Empty;
-    public string Role { get; set; } = string.Empty;
-    public string? AvatarUrl { get; set; }
-    public DateTime? DateOfBirth { get; set; }
-    public string? Gender { get; set; }
-    public DateTime CreatedAt { get; set; }
-    public bool IsActive { get; set; } = true;
-}
-
-public class PostInfo
-{
-    public int Id { get; set; }
-    public string Title { get; set; } = string.Empty;
-    public string Content { get; set; } = string.Empty;
-    public string? ImageUrl { get; set; }
-    public string AuthorName { get; set; } = string.Empty;
-    public string AuthorEmail { get; set; } = string.Empty;
-    public DateTime CreatedAt { get; set; }
-    public DateTime? UpdatedAt { get; set; }
-}
-
-public class AdminStats
-{
-    public int TotalUsers { get; set; }
-    public int TotalPosts { get; set; }
-    public int ActiveUsers { get; set; }
-    public int PublishedPosts { get; set; }
-    public int PendingPosts { get; set; }
-    public DateTime LastUpdated { get; set; }
 }

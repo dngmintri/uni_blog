@@ -1,3 +1,4 @@
+@using frontend.Models
 @using frontend.Services
 @inject IAdminService adminService
 
@@ -218,19 +219,6 @@
         overflow: hidden;
         text-overflow: ellipsis;
         vertical-align: middle;
-    }
-
-    .table td:nth-child(2) { /* Avatar column */
-        text-align: center;
-    }
-
-    .table td:nth-child(6), /* Role column */
-    .table td:nth-child(7) { /* Status column */
-        text-align: center;
-    }
-
-    .table td:nth-child(9) { /* Actions column */
-        text-align: center;
     }
 </style>
 

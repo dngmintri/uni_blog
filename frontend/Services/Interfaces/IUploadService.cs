@@ -1,5 +1,5 @@
-using Microsoft.AspNetCore.Components.Forms;
 using Blazorise;
+namespace frontend.Services;
 
 public interface IUploadService
 {
