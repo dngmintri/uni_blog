@@ -111,28 +111,6 @@ public class AdminController : ControllerBase
         }
     }
 
-    [HttpPut("posts/{postId}")]
-    public async Task<ActionResult> UpdatePost(int postId, [FromBody] AdminPostUpdateRequest request)
-    {
-        try
-        {
-            var post = await _postRepository.GetByIdAsync(postId);
-            if (post == null) return NotFound();
-
-            post.Title = request.Title;
-            post.Content = request.Content;
-            post.ImageUrl = request.ImageUrl;
-            post.UpdatedAt = DateTime.Now;
-
-            await _postRepository.UpdateAsync(post);
-            return Ok();
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { message = $"Lỗi: {ex.Message}" });
-        }
-    }
-
     [HttpDelete("posts/{postId}")]
     public async Task<ActionResult> DeletePost(int postId)
     {
