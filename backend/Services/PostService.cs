@@ -17,12 +17,12 @@ public class PostService : IPostService
 		_users = users;
 	}
 
-	public async Task<PagedResult<PostDto>> GetPagedAsync(int page, int pageSize, bool? published)
+	public async Task<PagedResult<PostDto>> GetPagedAsync(int page, int pageSize)
 	{
 		page = page < 1 ? 1 : page;
 		pageSize = pageSize is < 1 or > 100 ? 10 : pageSize;
 
-		var (items, total) = await _posts.GetPagedAsync(page, pageSize, published);
+		var (items, total) = await _posts.GetPagedAsync(page, pageSize);
 		var resultItems = items.Select(p => new PostDto
 		{
 			PostId = p.PostId,
@@ -39,8 +39,7 @@ public class PostService : IPostService
 
 		return new PagedResult<PostDto> { Total = total, Items = resultItems };
 	}
-
-	public async Task<PostDto?> GetByIdAndIncreaseViewAsync(int id)
+	public async Task<PostDto?> GetByIdAsync(int id)
 	{
 		var post = await _posts.GetByIdWithUserAsync(id);
 		if (post is null) return null;

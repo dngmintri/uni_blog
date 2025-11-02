@@ -70,7 +70,7 @@
 
         try
         {
-            var result = await authService.LoginAsync(loginRequest);
+            var (result, errorMsg) = await authService.LoginAsync(loginRequest);
             
             if (result != null)
             {
@@ -78,7 +78,10 @@
             }
             else
             {
-                errorMessage = "Đăng nhập thất bại!";
+                // Sử dụng error message từ service hoặc thông báo mặc định
+                errorMessage = !string.IsNullOrEmpty(errorMsg) 
+                    ? errorMsg 
+                    : "Tên đăng nhập hoặc mật khẩu không đúng!";
             }
         }
         catch (Exception ex)

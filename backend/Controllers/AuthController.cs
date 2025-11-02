@@ -31,16 +31,19 @@ public class AuthController : ControllerBase
     public async Task<ActionResult<AuthResponse>> Login([FromBody] LoginRequest req)
     {
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
-        
         try
         {
             var res = await _auth.LoginAsync(req);
-            if (res is null) return Unauthorized(new { message = "Tên đăng nhập hoặc mật khẩu không đúng" });
+            if (res is null) return Unauthorized("Tài khoản hoặc mật khẩu không chính xác");
             return Ok(res);
         }
-        catch (UnauthorizedAccessException ex)
+        catch (UnauthorizedAccessException ex) when (ex.Message == "ACCOUNT_DEACTIVATED")
         {
-            return Unauthorized(new { message = ex.Message });
+            return Unauthorized("Tài khoản đã bị dừng hoạt động");
+        }
+        catch
+        {
+            return Unauthorized("Tài khoản hoặc mật khẩu không chính xác");
         }
     }
 
