@@ -10,9 +10,10 @@ public class PostRepository : IPostRepository
 	private readonly BlogDbContext _db;
 	public PostRepository(BlogDbContext db) => _db = db;
 
-	public async Task<(IEnumerable<Post> items, int total)> GetPagedAsync(int page, int pageSize, bool? published)
+	public async Task<(IEnumerable<Post> items, int total)> GetPagedAsync(int page, int pageSize)
 	{
-		var query = _db.Posts.AsNoTracking().Where(p => !p.IsDeleted);
+		var query = _db.Posts.AsNoTracking()
+			.Where(p => !p.IsDeleted);
 
 		var total = await query.CountAsync();
 		var items = await query
@@ -36,6 +37,7 @@ public class PostRepository : IPostRepository
 		return await _db.Posts
 			.Where(p => !p.IsDeleted)
 			.Include(p => p.User)
+			.Where(p => !p.IsDeleted)
 			.OrderByDescending(p => p.CreatedAt)
 			.ToListAsync();
 	}

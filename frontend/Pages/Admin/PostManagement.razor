@@ -64,9 +64,6 @@
                                     <Button Color="Color.Info" @onclick="() => ViewPost(post)">
                                         <Blazorise.Icons.FontAwesome.Icon Name="IconName.Eye" />
                                     </Button>
-                                    <Button Color="Color.Warning" @onclick="() => EditPost(post)">
-                                        <Blazorise.Icons.FontAwesome.Icon Name="IconName.Edit" />
-                                    </Button>
                                     <Button Color="Color.Danger" @onclick="() => DeletePost(post)">
                                         <Blazorise.Icons.FontAwesome.Icon Name="IconName.Times" />
                                     </Button>
@@ -109,7 +106,6 @@
                             <Blazorise.Icons.FontAwesome.Icon Name="IconName.Calendar" class="me-1" />
                             @viewingPost.CreatedAt.ToString("dd/MM/yyyy HH:mm")
                         </small>
-                        <br>
                     </div>
                     @if (!string.IsNullOrEmpty(viewingPost.ImageUrl))
                     {
@@ -128,60 +124,6 @@
         </ModalBody>
         <ModalFooter>
             <Button Color="Color.Secondary" @onclick="CloseViewModal">Đóng</Button>
-        </ModalFooter>
-    </ModalContent>
-</Modal>
-
-<!-- Edit Post Modal -->
-<Modal @ref="editPostModal" Size="ModalSize.Large">
-    <ModalContent>
-        <ModalHeader>
-            <ModalTitle>Sửa bài viết</ModalTitle>
-            <CloseButton @onclick="CloseEditModal" />
-        </ModalHeader>
-        <ModalBody>
-            @if (editingPost != null)
-            {
-                <EditForm Model="editingPost" OnValidSubmit="SavePost">
-                    <Blazorise.ValidationSummary />
-                    
-                    <Field>
-                        <FieldLabel>Tiêu đề</FieldLabel>
-                        <TextEdit @bind-Text="editingPost.Title" />
-                    </Field>
-                    
-                    <Field>
-                        <FieldLabel>Nội dung</FieldLabel>
-                        <TextEdit @bind-Text="editingPost.Content" Rows="10" />
-                    </Field>
-                    
-                    <Field>
-                        <FieldLabel>Ảnh bài viết</FieldLabel>
-                        @if (!string.IsNullOrEmpty(editingPost.ImageUrl))
-                        {
-                            <div class="mb-2">
-                                <img src="@GetFullImageUrl(editingPost.ImageUrl)" 
-                                     alt="Current Image" 
-                                     class="img-thumbnail" 
-                                     style="max-width: 300px; max-height: 200px;" 
-                                     onerror="this.style.display='none'; this.parentElement.innerHTML='<small class=\'text-muted\'>Ảnh cũ không tồn tại</small>'" />
-                            </div>
-                        }
-                        <FileEdit Multiple="false" Accept=".jpg,.jpeg,.png,.gif" Changed="OnFileSelected" />
-                        @if (isUploadingImage)
-                        {
-                            <div class="text-info mt-2">
-                                <span class="spinner-border spinner-border-sm me-2"></span>
-                                Đang tải ảnh lên...
-                            </div>
-                        }
-                    </Field>
-                </EditForm>
-            }
-        </ModalBody>
-        <ModalFooter>
-            <Button Color="Color.Secondary" @onclick="CloseEditModal">Hủy</Button>
-            <Button Color="Color.Primary" @onclick="SavePost">Lưu thay đổi</Button>
         </ModalFooter>
     </ModalContent>
 </Modal>
@@ -268,17 +210,7 @@
     private bool isLoading = true;
     private bool isUploadingImage = false;
     private Modal? viewPostModal;
-    private Modal? editPostModal;
     private PostInfo? viewingPost;
-    private PostInfo? editingPost;
-    private IFileEntry? selectedImageFile;
-
-    private string GetFullImageUrl(string? imageUrl)
-    {
-        if (string.IsNullOrEmpty(imageUrl)) return "";
-        if (imageUrl.StartsWith("http://") || imageUrl.StartsWith("https://")) return imageUrl;
-        return $"{BackendBaseUrl}{imageUrl}";
-    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -308,69 +240,6 @@
     {
         viewPostModal?.Hide();
         viewingPost = null;
-    }
-
-    private void EditPost(PostInfo post)
-    {
-        editingPost = new PostInfo
-        {
-            Id = post.Id,
-            Title = post.Title,
-            Content = post.Content,
-            ImageUrl = post.ImageUrl,
-            AuthorName = post.AuthorName,
-            AuthorEmail = post.AuthorEmail,
-            CreatedAt = post.CreatedAt,
-            UpdatedAt = post.UpdatedAt
-        };
-        editPostModal?.Show();
-    }
-
-    private void CloseEditModal()
-    {
-        editPostModal?.Hide();
-        editingPost = null;
-    }
-
-    private void OnFileSelected(FileChangedEventArgs e)
-    {
-        selectedImageFile = e.Files.FirstOrDefault();
-    }
-
-    private async Task SavePost()
-    {
-        if (editingPost == null) return;
-
-        try
-        {
-            // Upload ảnh mới nếu có chọn
-            if (selectedImageFile != null)
-            {
-                isUploadingImage = true;
-                StateHasChanged();
-                
-                var imageUrl = await uploadService.UploadImageAsync(selectedImageFile);
-                if (!string.IsNullOrEmpty(imageUrl))
-                {
-                    editingPost.ImageUrl = imageUrl;
-                }
-                
-                isUploadingImage = false;
-            }
-
-            var success = await adminService.UpdatePostAsync(editingPost.Id, editingPost);
-            if (success)
-            {
-                selectedImageFile = null;
-                await LoadPosts();
-                CloseEditModal();
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error saving post: {ex.Message}");
-            isUploadingImage = false;
-        }
     }
 
     private async Task DeletePost(PostInfo post)

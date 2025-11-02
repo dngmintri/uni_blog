@@ -46,53 +46,47 @@ public class AuthService : IAuthService
         }
     }
 
-    public async Task<AuthResponse?> LoginAsync(LoginRequest request)
+    public async Task<(AuthResponse? result, string? errorMessage)> LoginAsync(LoginRequest request)
     {
-        Console.WriteLine($"AuthService: Attempting login for {request.Username}");
-        
-        var json = JsonSerializer.Serialize(request, _jsonOptions);
-        var content = new StringContent(json, Encoding.UTF8, "application/json");
+        try
+        {
+            Console.WriteLine($"AuthService: Attempting login for {request.Username}");
+            
+            var json = JsonSerializer.Serialize(request, _jsonOptions);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-        var response = await _httpClient.PostAsync("api/auth/login", content);
-        Console.WriteLine($"AuthService: Response status: {response.StatusCode}");
-        
-        if (response.IsSuccessStatusCode)
-        {
-            var responseContent = await response.Content.ReadAsStringAsync();
-            Console.WriteLine($"AuthService: Response content: {responseContent}");
+            var response = await _httpClient.PostAsync("api/auth/login", content);
+            Console.WriteLine($"AuthService: Response status: {response.StatusCode}");
             
-            var authResponse = JsonSerializer.Deserialize<AuthResponse>(responseContent, _jsonOptions);
-            Console.WriteLine($"AuthService: Deserialized response: {authResponse?.Username}");
-            Console.WriteLine($"AuthService: RefreshToken received: {authResponse?.RefreshToken?.Substring(0, 20)}...");
-            
-            if (authResponse != null)
+            if (response.IsSuccessStatusCode)
             {
-                await _authStateProvider.MarkUserAsAuthenticated(authResponse);
-                Console.WriteLine("AuthService: User marked as authenticated");
-            }
-            
-            return authResponse;
-        }
-        else
-        {
-            var errorContent = await response.Content.ReadAsStringAsync();
-            Console.WriteLine($"AuthService: Error response: {errorContent}");
-            
-            // Parse error message from backend
-            try
-            {
-                var errorResponse = JsonSerializer.Deserialize<ErrorResponse>(errorContent, _jsonOptions);
-                if (!string.IsNullOrEmpty(errorResponse?.Message))
+                var responseContent = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"AuthService: Response content: {responseContent}");
+                
+                var authResponse = JsonSerializer.Deserialize<AuthResponse>(responseContent, _jsonOptions);
+                Console.WriteLine($"AuthService: Deserialized response: {authResponse?.Username}");
+                Console.WriteLine($"AuthService: RefreshToken received: {authResponse?.RefreshToken?.Substring(0, 20)}...");
+                
+                if (authResponse != null)
                 {
-                    throw new Exception(errorResponse.Message);
+                    await _authStateProvider.MarkUserAsAuthenticated(authResponse);
+                    Console.WriteLine("AuthService: User marked as authenticated");
                 }
+                
+                return (authResponse, null);
             }
-            catch (JsonException)
+            else
             {
-                // If can't parse, throw generic error
+                var errorContent = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"AuthService: Error response: {errorContent}");
+                // Trả về error message từ response
+                return (null, errorContent.Trim('"'));
             }
-            
-            throw new Exception("Tên đăng nhập hoặc mật khẩu không đúng");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"AuthService: Exception: {ex.Message}");
+            return (null, $"Lỗi đăng nhập: {ex.Message}");
         }
     }
 
