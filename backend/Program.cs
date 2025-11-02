@@ -101,6 +101,25 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = new SymmetricSecurityKey(key),
             ClockSkew = TimeSpan.Zero // tránh delay thời gian hết hạn token
         };
+
+        // Kiểm tra IsActive của user mỗi khi validate token
+        o.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = async context =>
+            {
+                var userRepository = context.HttpContext.RequestServices.GetRequiredService<IUserRepository>();
+                var userIdClaim = context.Principal?.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+                
+                if (int.TryParse(userIdClaim, out int userId))
+                {
+                    var user = await userRepository.GetByIdAsync(userId);
+                    if (user == null || !user.IsActive)
+                    {
+                        context.Fail("User is not active or does not exist.");
+                    }
+                }
+            }
+        };
     });
 
 builder.Services.AddAuthorization();

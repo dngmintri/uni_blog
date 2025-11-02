@@ -114,6 +114,13 @@ public class AuthService : IAuthService
 			return null;
 		}
 
+		// Kiểm tra tài khoản có đang hoạt động không
+		if (!user.IsActive)
+		{
+			Console.WriteLine($"User account is inactive: {user.Username}");
+			throw new UnauthorizedAccessException("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.");
+		}
+
 		user.LastLogin = DateTime.Now;
 		await _users.SaveChangesAsync();
 
@@ -147,6 +154,7 @@ public class AuthService : IAuthService
 
 			var user = await _users.GetByIdAsync(userId.Value);
 			if (user == null) return null;
+			if (!user.IsActive) throw new UnauthorizedAccessException("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.");
 
 			// Kiểm tra user có active không
 			if (!user.IsActive)

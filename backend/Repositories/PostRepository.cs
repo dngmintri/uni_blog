@@ -27,14 +27,15 @@ public class PostRepository : IPostRepository
 	}
 
 	public Task<Post?> GetByIdWithUserAsync(int id) =>
-		_db.Posts.Include(p => p.User).FirstOrDefaultAsync(p => p.PostId == id);
+		_db.Posts.Where(p => !p.IsDeleted).Include(p => p.User).FirstOrDefaultAsync(p => p.PostId == id);
 
 	public Task<Post?> GetByIdAsync(int id) =>
-		_db.Posts.FirstOrDefaultAsync(p => p.PostId == id);
+		_db.Posts.Where(p => !p.IsDeleted).FirstOrDefaultAsync(p => p.PostId == id);
 
 	public async Task<IEnumerable<Post>> GetAllAsync()
 	{
 		return await _db.Posts
+			.Where(p => !p.IsDeleted)
 			.Include(p => p.User)
 			.Where(p => !p.IsDeleted)
 			.OrderByDescending(p => p.CreatedAt)
@@ -66,7 +67,8 @@ public class PostRepository : IPostRepository
 		var post = await _db.Posts.FindAsync(id);
 		if (post != null)
 		{
-			_db.Posts.Remove(post);
+			post.IsDeleted = true;
+			post.UpdatedAt = DateTime.Now;
 			await _db.SaveChangesAsync();
 		}
 	}

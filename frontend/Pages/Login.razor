@@ -74,8 +74,6 @@
             
             if (result != null)
             {
-                // TODO: Lưu token vào localStorage và redirect
-                // await localStorage.SetItemAsync("authToken", result.Token);
                 navigationManager.NavigateTo("/dashboard");
             }
             else
@@ -88,7 +86,7 @@
         }
         catch (Exception ex)
         {
-            errorMessage = $"Lỗi đăng nhập: {ex.Message}";
+            errorMessage = ex.Message;
         }
         finally
         {
