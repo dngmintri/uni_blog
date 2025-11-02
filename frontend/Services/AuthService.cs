@@ -48,10 +48,12 @@ public class AuthService : IAuthService
 
     public async Task<(AuthResponse? result, string? errorMessage)> LoginAsync(LoginRequest request)
     {
-        Console.WriteLine($"AuthService: Attempting login for {request.Username}");
-        
-        var json = JsonSerializer.Serialize(request, _jsonOptions);
-        var content = new StringContent(json, Encoding.UTF8, "application/json");
+        try
+        {
+            Console.WriteLine($"AuthService: Attempting login for {request.Username}");
+            
+            var json = JsonSerializer.Serialize(request, _jsonOptions);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             var response = await _httpClient.PostAsync("api/auth/login", content);
             Console.WriteLine($"AuthService: Response status: {response.StatusCode}");

@@ -75,16 +75,16 @@ public class UsersController : ControllerBase
             if (!allowedExtensions.Contains(fileExtension))
                 return BadRequest(new { message = "Chỉ chấp nhận file JPG, PNG, GIF" });
 
-            var avatarUrl = await _fileUploadService.UploadFileAsync(file, "avatars");
+            var avatarUrl = await _fileService.UploadFileAsync(file, "avatars");
             if (string.IsNullOrEmpty(avatarUrl))
                 return BadRequest(new { message = "Upload thất bại" });
 
             // Update user avatar
-            var user = await _userRepository.GetByIdAsync(userId);
+            var user = await _users.GetByIdAsync(userId);
             if (user != null)
             {
                 user.AvatarUrl = avatarUrl;
-                await _userRepository.SaveChangesAsync();
+                await _users.SaveChangesAsync();
             }
 
             return Ok(new { message = "Upload ảnh đại diện thành công", avatarUrl });
@@ -100,7 +100,7 @@ public class UsersController : ControllerBase
     {
         try
         {
-            var users = await _userRepository.GetAllAsync();
+            var users = await _users.GetAllAsync();
             return Ok(new { 
                 count = users.Count(), 
                 users = users.Select(u => new { 
